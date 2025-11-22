@@ -1,16 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StatusBar } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useAuth } from '../../../context/AuthContext';
 import { styles } from './SplashScreen.styles';
 import { COLORS } from '../../../utils';
 
 const SplashScreen = () => {
-  const navigation = useNavigation();
-  const { isAuthenticated, user } = useAuth();
-
   // Animations
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoRotate = useRef(new Animated.Value(0)).current;
@@ -26,11 +21,6 @@ const SplashScreen = () => {
 
   useEffect(() => {
     startAnimations();
-    const timer = setTimeout(() => {
-      navigateToNext();
-    }, 3000);
-
-    return () => clearTimeout(timer);
   }, []);
 
   const startAnimations = () => {
@@ -108,21 +98,6 @@ const SplashScreen = () => {
         ]),
       ).start();
     });
-  };
-
-  const navigateToNext = () => {
-    // Check if user is authenticated and profile is complete
-    if (isAuthenticated && user?.profileComplete) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainApp' as never }],
-      });
-    } else {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'LanguageSelection' as never }],
-      });
-    }
   };
 
   const spin = logoRotate.interpolate({

@@ -17,6 +17,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AuthNavigationProp } from '../../../navigation/types';
 import { styles } from './ProfileSetup1Screen.styles';
 import { COLORS } from '../../../utils';
+import { useAuth } from '../../../context/AuthContext';
 
 interface Skill {
   id: string;
@@ -39,6 +40,7 @@ const SKILLS: Skill[] = [
 
 const ProfileSetup1Screen = () => {
   const navigation = useNavigation<AuthNavigationProp>();
+  const { updateUser } = useAuth(); // Add this line
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [selectedSkill, setSelectedSkill] = useState<string>('');
@@ -93,14 +95,29 @@ const ProfileSetup1Screen = () => {
     return fullName.trim().length >= 3 && selectedSkill !== '';
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!isFormValid()) {
       Alert.alert('Incomplete', 'Please fill all required fields');
       return;
     }
 
-    // TODO: Save data temporarily
-    navigation.navigate('ProfileSetup2');
+    try {
+      // Get the selected skill name
+      const skillName = SKILLS.find(s => s.id === selectedSkill)?.name || '';
+
+      // Save data to user context
+      await updateUser({
+        name: fullName.trim(),
+        skill: skillName,
+        // profileComplete remains false until ProfileSetup2 is done
+      });
+
+      // Navigate to next step
+      navigation.navigate('ProfileSetup2');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to save profile data. Please try again.');
+    }
   };
 
   const renderSkillItem = (skill: Skill) => {

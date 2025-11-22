@@ -13,6 +13,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './WelcomeCarouselScreen.styles';
 import { COLORS } from '../../../utils';
+import { useAuth } from '../../../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +58,7 @@ const SLIDES: OnboardingSlide[] = [
 
 const WelcomeCarouselScreen = () => {
   const navigation = useNavigation();
+  const { setOnboardingComplete } = useAuth(); // Add this line
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -88,18 +90,22 @@ const WelcomeCarouselScreen = () => {
     ]).start();
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < SLIDES.length - 1) {
       flatListRef.current?.scrollToIndex({
         index: currentIndex + 1,
         animated: true,
       });
     } else {
+      // Mark onboarding as complete
+      await setOnboardingComplete();
       navigation.navigate('PhoneNumber' as never);
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    // Mark onboarding as complete
+    await setOnboardingComplete();
     navigation.navigate('PhoneNumber' as never);
   };
 

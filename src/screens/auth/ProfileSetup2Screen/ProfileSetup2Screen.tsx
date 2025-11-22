@@ -55,8 +55,8 @@ const EXPERIENCE_OPTIONS: Experience[] = [
 
 const ProfileSetup2Screen = () => {
   const navigation = useNavigation<AuthNavigationProp>();
-  const { login } = useAuth(); // ✅ Use hook at component top level
 
+  const { updateUser } = useAuth();
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedExperience, setSelectedExperience] =
     useState<Experience | null>(null);
@@ -69,7 +69,6 @@ const ProfileSetup2Screen = () => {
   };
 
   const handleComplete = async () => {
-    // ✅ Fixed function
     if (!isFormValid()) {
       Alert.alert('Incomplete', 'Please fill all required fields');
       return;
@@ -82,11 +81,17 @@ const ProfileSetup2Screen = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Save auth token - triggers navigation to MainTabs
-      await login();
+      // Update user profile with complete data
+      await updateUser({
+        // Add city and experience data here from state
+        profileComplete: true, // Mark profile as complete
+      });
 
       // Success message
       Alert.alert('Success! 🎉', 'Your profile has been created successfully!');
+
+      // Navigation will be handled automatically by RootNavigator
+      // since profileComplete is now true
     } catch (error) {
       console.error('Profile creation error:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');

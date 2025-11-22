@@ -166,10 +166,9 @@ const OTPVerificationScreen = () => {
       const success = await login(phoneNumber, otpCode);
 
       if (success) {
-        setTimeout(() => {
-          setIsVerifying(false);
-          navigation.navigate('ProfileSetup1' as never);
-        }, 1000);
+        setIsVerifying(false);
+        // No need to navigate manually - RootNavigator will automatically
+        // show ProfileSetup screens since profileComplete is false
       } else {
         setIsVerifying(false);
         shakeInputs();

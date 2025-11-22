@@ -1,20 +1,30 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Image,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import Header from '../../../components/Header/Header';
 import { styles } from './DashboardHomeScreen.styles';
 import { COLORS } from '../../../utils';
 
 const DashboardHomeScreen = () => {
   const navigation = useNavigation();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleAddVideo = () => {
     navigation.navigate('AddVideo' as never);
@@ -24,31 +34,33 @@ const DashboardHomeScreen = () => {
     navigation.navigate('EditProfile' as never);
   };
 
+  const handleNotifications = () => {
+    console.log('Notifications pressed');
+  };
+
+  const handleProfilePress = () => {
+    navigation.navigate('Profile' as never);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Image
-              source={{ uri: 'https://via.placeholder.com/50' }}
-              style={styles.profileImage}
-            />
-            <View>
-              <Text style={styles.greetingText}>Welcome back,</Text>
-              <Text style={styles.userName}>Rajesh Kumar</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Icon name="bell-outline" size={24} color={COLORS.textPrimary} />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationBadgeText}>3</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+      {/* Reusable Header Component */}
+      <Header
+        variant="profile"
+        showProfile={true}
+        profileImage="https://via.placeholder.com/50"
+        profileName="Rajesh Kumar"
+        greeting="Welcome back,"
+        showOnlineBadge={true}
+        onProfilePress={handleProfilePress}
+        showNotification={true}
+        notificationCount={3}
+        onNotificationPress={handleNotifications}
+      />
 
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Stats Cards */}
-        <View style={styles.statsContainer}>
+        <Animated.View style={[styles.statsContainer, { opacity: fadeAnim }]}>
           <LinearGradient
             colors={['#2563EB', '#1E40AF']}
             style={styles.statsCard}
@@ -67,8 +79,9 @@ const DashboardHomeScreen = () => {
           </LinearGradient>
 
           <View style={styles.statsRow}>
-            <View
-              style={[styles.smallStatsCard, { backgroundColor: '#FEF3C7' }]}
+            <LinearGradient
+              colors={['#FEF3C7', '#FDE68A']}
+              style={styles.smallStatsCard}
             >
               <Icon name="briefcase" size={24} color="#D97706" />
               <Text style={[styles.smallStatsValue, { color: '#92400E' }]}>
@@ -77,10 +90,11 @@ const DashboardHomeScreen = () => {
               <Text style={[styles.smallStatsLabel, { color: '#78350F' }]}>
                 Jobs Done
               </Text>
-            </View>
+            </LinearGradient>
 
-            <View
-              style={[styles.smallStatsCard, { backgroundColor: '#DBEAFE' }]}
+            <LinearGradient
+              colors={['#DBEAFE', '#BFDBFE']}
+              style={styles.smallStatsCard}
             >
               <Icon name="star" size={24} color="#1E40AF" />
               <Text style={[styles.smallStatsValue, { color: '#1E3A8A' }]}>
@@ -89,9 +103,9 @@ const DashboardHomeScreen = () => {
               <Text style={[styles.smallStatsLabel, { color: '#1E40AF' }]}>
                 Rating
               </Text>
-            </View>
+            </LinearGradient>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
@@ -159,7 +173,13 @@ const DashboardHomeScreen = () => {
 
           <View style={styles.profileCard}>
             <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBar, { width: '85%' }]} />
+              <View style={styles.progressBarBackground} />
+              <LinearGradient
+                colors={['#10B981', '#059669']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressBar, { width: '85%' }]}
+              />
             </View>
 
             <View style={styles.profileTips}>

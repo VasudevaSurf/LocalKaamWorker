@@ -19,10 +19,12 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasSeenOnboarding: boolean;
   login: (phone: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
   checkAuthStatus: () => Promise<boolean>;
+  setOnboardingComplete: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -40,6 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const userData = await AsyncStorage.getItem('@user');
       const authToken = await AsyncStorage.getItem('@auth_token');
+      const onboardingComplete = await AsyncStorage.getItem(
+        '@onboarding_complete',
+      );
+
+      setHasSeenOnboarding(onboardingComplete === 'true');
 
       if (userData && authToken) {
         const parsedUser = JSON.parse(userData);
@@ -59,6 +67,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAuthenticated(false);
       setIsLoading(false);
       return false;
+    }
+  };
+
+  const setOnboardingComplete = async (): Promise<void> => {
+    try {
+      await AsyncStorage.setItem('@onboarding_complete', 'true');
+      setHasSeenOnboarding(true);
+    } catch (error) {
+      console.error('Error setting onboarding complete:', error);
     }
   };
 
@@ -116,10 +133,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         isAuthenticated,
         isLoading,
+        hasSeenOnboarding,
         login,
         logout,
         updateUser,
         checkAuthStatus,
+        setOnboardingComplete,
       }}
     >
       {children}
