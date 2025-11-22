@@ -1,0 +1,158 @@
+import { StyleSheet } from 'react-native';
+import { COLORS, FONTS, getFigmaDimension } from '../../../utils';
+
+export const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: getFigmaDimension(24),
+    paddingTop: getFigmaDimension(40),
+    paddingBottom: getFigmaDimension(24),
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: getFigmaDimension(40),
+  },
+  iconContainer: {
+    marginBottom: getFigmaDimension(24),
+  },
+  iconCircle: {
+    width: getFigmaDimension(120),
+    height: getFigmaDimension(120),
+    borderRadius: getFigmaDimension(60),
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#DBEAFE',
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: getFigmaDimension(24),
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: getFigmaDimension(8),
+  },
+  subtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(15),
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: getFigmaDimension(22),
+    paddingHorizontal: getFigmaDimension(16),
+  },
+  inputSection: {
+    marginBottom: getFigmaDimension(32),
+  },
+  label: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(14),
+    color: COLORS.textPrimary,
+    marginBottom: getFigmaDimension(8),
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: getFigmaDimension(12),
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    paddingHorizontal: getFigmaDimension(16),
+    height: getFigmaDimension(56),
+  },
+  countryCode: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: getFigmaDimension(12),
+    borderRightWidth: 1,
+    borderRightColor: COLORS.border,
+    marginRight: getFigmaDimension(12),
+  },
+  countryCodeText: {
+    fontSize: getFigmaDimension(20),
+    marginRight: getFigmaDimension(6),
+  },
+  countryCodeNumber: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(16),
+    color: COLORS.textPrimary,
+  },
+  input: {
+    flex: 1,
+    fontFamily: FONTS.medium,
+    fontSize: getFigmaDimension(16),
+    color: COLORS.textPrimary,
+    padding: 0,
+  },
+  clearButton: {
+    padding: getFigmaDimension(4),
+  },
+  counter: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(12),
+    color: COLORS.textSecondary,
+    marginTop: getFigmaDimension(6),
+    textAlign: 'right',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: getFigmaDimension(8),
+    padding: getFigmaDimension(12),
+    marginTop: getFigmaDimension(16),
+  },
+  infoText: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(13),
+    color: '#1E40AF',
+    marginLeft: getFigmaDimension(8),
+    flex: 1,
+  },
+  sendButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primary,
+    borderRadius: getFigmaDimension(12),
+    paddingVertical: getFigmaDimension(16),
+    paddingHorizontal: getFigmaDimension(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  sendButtonDisabled: {
+    backgroundColor: COLORS.gray300,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  sendButtonText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(16),
+    color: COLORS.white,
+    marginRight: getFigmaDimension(8),
+  },
+  termsContainer: {
+    marginTop: getFigmaDimension(24),
+    paddingHorizontal: getFigmaDimension(16),
+  },
+  termsText: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(12),
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: getFigmaDimension(18),
+  },
+  termsLink: {
+    fontFamily: FONTS.semiBold,
+    color: COLORS.primary,
+  },
+});

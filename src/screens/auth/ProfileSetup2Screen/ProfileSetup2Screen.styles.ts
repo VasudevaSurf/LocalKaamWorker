@@ -1,0 +1,201 @@
+import { StyleSheet } from 'react-native';
+import { COLORS, FONTS, getFigmaDimension } from '../../../utils';
+
+export const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: getFigmaDimension(24),
+    paddingTop: getFigmaDimension(16),
+    paddingBottom: getFigmaDimension(24),
+  },
+  backButton: {
+    width: getFigmaDimension(40),
+    height: getFigmaDimension(40),
+    borderRadius: getFigmaDimension(20),
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: getFigmaDimension(16),
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  progressContainer: {
+    marginBottom: getFigmaDimension(24),
+  },
+  progressBar: {
+    height: getFigmaDimension(6),
+    backgroundColor: COLORS.gray200,
+    borderRadius: getFigmaDimension(3),
+    overflow: 'hidden',
+    marginBottom: getFigmaDimension(8),
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+  },
+  progressText: {
+    fontFamily: FONTS.medium,
+    fontSize: getFigmaDimension(13),
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  header: {
+    marginBottom: getFigmaDimension(32),
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: getFigmaDimension(26),
+    color: COLORS.textPrimary,
+    marginBottom: getFigmaDimension(8),
+  },
+  subtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(15),
+    color: COLORS.textSecondary,
+    lineHeight: getFigmaDimension(22),
+  },
+  inputSection: {
+    marginBottom: getFigmaDimension(24),
+  },
+  sectionLabel: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(15),
+    color: COLORS.textPrimary,
+    marginBottom: getFigmaDimension(6),
+  },
+  required: {
+    color: COLORS.error,
+  },
+  sectionHint: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(13),
+    color: COLORS.textSecondary,
+    marginBottom: getFigmaDimension(12),
+  },
+  selectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.white,
+    borderRadius: getFigmaDimension(12),
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    paddingHorizontal: getFigmaDimension(16),
+    height: getFigmaDimension(56),
+  },
+  selectContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  selectText: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(15),
+    color: COLORS.gray400,
+    marginLeft: getFigmaDimension(12),
+  },
+  selectTextSelected: {
+    fontFamily: FONTS.medium,
+    color: COLORS.textPrimary,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: getFigmaDimension(8),
+    padding: getFigmaDimension(12),
+    marginBottom: getFigmaDimension(24),
+  },
+  infoText: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(13),
+    color: '#1E40AF',
+    marginLeft: getFigmaDimension(8),
+    flex: 1,
+  },
+  completeButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primary,
+    borderRadius: getFigmaDimension(12),
+    paddingVertical: getFigmaDimension(16),
+    paddingHorizontal: getFigmaDimension(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  completeButtonDisabled: {
+    backgroundColor: COLORS.gray300,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  completeButtonText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(16),
+    color: COLORS.white,
+    marginRight: getFigmaDimension(8),
+  },
+  modal: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: getFigmaDimension(20),
+    borderTopRightRadius: getFigmaDimension(20),
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: getFigmaDimension(20),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: getFigmaDimension(18),
+    color: COLORS.textPrimary,
+  },
+  modalList: {
+    maxHeight: getFigmaDimension(400),
+  },
+  modalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: getFigmaDimension(16),
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  modalItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  modalItemText: {
+    marginLeft: getFigmaDimension(12),
+  },
+  modalItemTitle: {
+    fontFamily: FONTS.medium,
+    fontSize: getFigmaDimension(15),
+    color: COLORS.textPrimary,
+    marginLeft: getFigmaDimension(12),
+  },
+  modalItemSubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(13),
+    color: COLORS.textSecondary,
+  },
+});

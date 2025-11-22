@@ -1,0 +1,112 @@
+import { StyleSheet } from 'react-native';
+import {
+  COLORS,
+  FONTS,
+  getFigmaDimension,
+  totalScreenWidth,
+  totalScreenHeight,
+} from '../../../utils';
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  skipButton: {
+    position: 'absolute',
+    top: getFigmaDimension(48),
+    right: getFigmaDimension(24),
+    zIndex: 10,
+    paddingVertical: getFigmaDimension(8),
+    paddingHorizontal: getFigmaDimension(16),
+  },
+  skipText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(16),
+    color: COLORS.textSecondary,
+  },
+  slide: {
+    width: totalScreenWidth,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: getFigmaDimension(32),
+  },
+  iconContainer: {
+    marginBottom: getFigmaDimension(48),
+    alignItems: 'center',
+  },
+  iconCircle: {
+    width: getFigmaDimension(200),
+    height: getFigmaDimension(200),
+    borderRadius: getFigmaDimension(100),
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#DBEAFE',
+  },
+  textContainer: {
+    alignItems: 'center',
+    paddingHorizontal: getFigmaDimension(24),
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: getFigmaDimension(28),
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: getFigmaDimension(4),
+  },
+  subtitle: {
+    fontFamily: FONTS.bold,
+    fontSize: getFigmaDimension(28),
+    color: COLORS.primary,
+    textAlign: 'center',
+    marginBottom: getFigmaDimension(16),
+  },
+  description: {
+    fontFamily: FONTS.regular,
+    fontSize: getFigmaDimension(16),
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: getFigmaDimension(24),
+    paddingHorizontal: getFigmaDimension(16),
+  },
+  bottomSection: {
+    paddingHorizontal: getFigmaDimension(24),
+    paddingBottom: getFigmaDimension(40),
+    paddingTop: getFigmaDimension(24),
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: getFigmaDimension(32),
+  },
+  dot: {
+    height: getFigmaDimension(8),
+    borderRadius: getFigmaDimension(4),
+    backgroundColor: COLORS.primary,
+    marginHorizontal: getFigmaDimension(4),
+  },
+  nextButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primary,
+    borderRadius: getFigmaDimension(12),
+    paddingVertical: getFigmaDimension(16),
+    paddingHorizontal: getFigmaDimension(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  nextButtonText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(16),
+    color: COLORS.white,
+    marginRight: getFigmaDimension(8),
+  },
+});

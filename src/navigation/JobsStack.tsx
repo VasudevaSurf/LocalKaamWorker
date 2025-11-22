@@ -1,0 +1,34 @@
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { JobsStackParamList } from './types';
+
+// Import screens
+import JobsListScreen from '../screens/jobs/JobsListScreen';
+import JobDetailsScreen from '../screens/jobs/JobDetailsScreen';
+import SendResponseScreen from '../screens/jobs/SendResponseScreen';
+import CompleteJobScreen from '../screens/jobs/CompleteJobScreen';
+import PaymentConfirmationScreen from '../screens/jobs/PaymentConfirmationScreen';
+
+const Stack = createNativeStackNavigator<JobsStackParamList>();
+
+const JobsStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+      }}
+    >
+      <Stack.Screen name="JobsList" component={JobsListScreen} />
+      <Stack.Screen name="JobDetails" component={JobDetailsScreen} />
+      <Stack.Screen name="SendResponse" component={SendResponseScreen} />
+      <Stack.Screen name="CompleteJob" component={CompleteJobScreen} />
+      <Stack.Screen
+        name="PaymentConfirmation"
+        component={PaymentConfirmationScreen}
+      />
+    </Stack.Navigator>
+  );
+};
+
+export default JobsStack;
