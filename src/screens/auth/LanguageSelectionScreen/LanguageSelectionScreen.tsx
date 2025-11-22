@@ -5,82 +5,103 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { AuthNavigationProp } from '../../../navigation/types';
 import { styles } from './LanguageSelectionScreen.styles';
+import { COLORS } from '../../../utils';
 
 interface Language {
-  code: string;
+  id: string;
   name: string;
   nativeName: string;
+  icon: string;
 }
 
 const LANGUAGES: Language[] = [
-  { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
-  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
-  { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
-  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+  { id: 'en', name: 'English', nativeName: 'English', icon: '🇬🇧' },
+  { id: 'hi', name: 'Hindi', nativeName: 'हिंदी', icon: '🇮🇳' },
+  { id: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', icon: '🇮🇳' },
+  { id: 'ta', name: 'Tamil', nativeName: 'தமிழ்', icon: '🇮🇳' },
+  { id: 'te', name: 'Telugu', nativeName: 'తెలుగు', icon: '🇮🇳' },
+  { id: 'bn', name: 'Bengali', nativeName: 'বাংলা', icon: '🇮🇳' },
 ];
 
 const LanguageSelectionScreen = () => {
-  const navigation = useNavigation<AuthNavigationProp>();
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
+  const navigation = useNavigation();
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
-  const handleContinue = () => {
-    // TODO: Save selected language to AsyncStorage
-    navigation.navigate('WelcomeCarousel');
+  const handleLanguageSelect = (languageId: string) => {
+    setSelectedLanguage(languageId);
   };
 
-  const renderLanguageItem = (language: Language) => {
-    const isSelected = selectedLanguage === language.code;
-
-    return (
-      <TouchableOpacity
-        key={language.code}
-        style={[styles.languageItem, isSelected && styles.languageItemSelected]}
-        onPress={() => setSelectedLanguage(language.code)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.languageContent}>
-          <View style={styles.radioOuter}>
-            {isSelected && <View style={styles.radioInner} />}
-          </View>
-          <View style={styles.languageText}>
-            <Text style={styles.languageName}>{language.nativeName}</Text>
-            <Text style={styles.languageSubName}>{language.name}</Text>
-          </View>
-        </View>
-        {isSelected && <Icon name="check-circle" size={24} color="#2563EB" />}
-      </TouchableOpacity>
-    );
+  const handleContinue = () => {
+    // Save language preference
+    navigation.navigate('WelcomeCarousel' as never);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar backgroundColor={COLORS.white} barStyle="dark-content" />
+
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Icon name="translate" size={40} color={COLORS.primary} />
+          </View>
           <Text style={styles.title}>Choose Your Language</Text>
-          <Text style={styles.subtitle}>
-            Select your preferred language to continue
-          </Text>
+          <Text style={styles.subtitle}>Select your preferred language</Text>
         </View>
 
         {/* Language List */}
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.languageList}
           showsVerticalScrollIndicator={false}
         >
-          {LANGUAGES.map(renderLanguageItem)}
+          {LANGUAGES.map(language => (
+            <TouchableOpacity
+              key={language.id}
+              style={[
+                styles.languageCard,
+                selectedLanguage === language.id && styles.languageCardSelected,
+              ]}
+              onPress={() => handleLanguageSelect(language.id)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.languageLeft}>
+                <Text style={styles.languageIcon}>{language.icon}</Text>
+                <View style={styles.languageInfo}>
+                  <Text
+                    style={[
+                      styles.languageName,
+                      selectedLanguage === language.id &&
+                        styles.languageNameSelected,
+                    ]}
+                  >
+                    {language.name}
+                  </Text>
+                  <Text style={styles.languageNative}>
+                    {language.nativeName}
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.radioButton,
+                  selectedLanguage === language.id &&
+                    styles.radioButtonSelected,
+                ]}
+              >
+                {selectedLanguage === language.id && (
+                  <View style={styles.radioButtonInner} />
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
 
         {/* Continue Button */}
@@ -91,7 +112,7 @@ const LanguageSelectionScreen = () => {
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
-            <Icon name="arrow-right" size={20} color="#FFFFFF" />
+            <Icon name="arrow-right" size={20} color={COLORS.white} />
           </TouchableOpacity>
         </View>
       </View>
