@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './SettingsScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
@@ -84,18 +85,12 @@ const SettingsScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Settings</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          onBackPress={handleBack}
+          title="Settings"
+        />
 
         <ScrollView
           style={styles.scrollView}

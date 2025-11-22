@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './JobDetailsScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 // Mock job data - in real app, fetch from API using jobId
 const MOCK_JOB = {
@@ -94,27 +95,26 @@ const JobDetailsScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Job Details</Text>
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSaveJob}
-            activeOpacity={0.7}
-          >
-            <Icon
-              name={isSaved ? 'bookmark' : 'bookmark-outline'}
-              size={24}
-              color={isSaved ? COLORS.primary : COLORS.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          title="Job Details"
+          showMore
+          onMorePress={handleSaveJob}
+          rightComponent={
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveJob}
+              activeOpacity={0.7}
+            >
+              <Icon
+                name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                size={24}
+                color={isSaved ? COLORS.primary : COLORS.textPrimary}
+              />
+            </TouchableOpacity>
+          }
+        />
 
         <ScrollView
           style={styles.scrollView}

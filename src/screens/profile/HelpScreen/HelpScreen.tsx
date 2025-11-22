@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './HelpScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 interface FAQ {
   id: string;
@@ -127,18 +128,12 @@ const HelpScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Help & Support</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          onBackPress={handleBack}
+          title="Help & Support"
+        />
 
         <ScrollView
           style={styles.scrollView}

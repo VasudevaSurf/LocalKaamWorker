@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './CompleteJobScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 // Mock job data
 const MOCK_JOB = {
@@ -110,18 +111,12 @@ const CompleteJobScreen = () => {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Complete Job</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          onBackPress={handleBack}
+          title="Complete Job"
+        />
 
         <ScrollView
           style={styles.scrollView}

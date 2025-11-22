@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { JobsStackParamList } from '../../../navigation/types';
 import { styles } from './PaymentConfirmationScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 type PaymentConfirmationRouteProp = RouteProp<
   JobsStackParamList,
@@ -185,18 +186,14 @@ const PaymentConfirmationScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Payment Confirmation</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          onBackPress={() => navigation.goBack()}
+          title="Payment Confirmation"
+          showMore
+          onMorePress={handleShare}
+        />
 
         <ScrollView
           style={styles.scrollView}

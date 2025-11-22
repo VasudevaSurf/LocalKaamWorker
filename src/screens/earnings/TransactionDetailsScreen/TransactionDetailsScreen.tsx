@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { EarningsStackParamList } from '../../../navigation/types';
 import { styles } from './TransactionDetailsScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 type TransactionDetailsRouteProp = RouteProp<
   EarningsStackParamList,
@@ -74,24 +75,14 @@ const TransactionDetailsScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction Details</Text>
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={handleShare}
-            activeOpacity={0.7}
-          >
-            <Icon name="share-variant" size={22} color={COLORS.primary} />
-          </TouchableOpacity>
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          onBackPress={handleBack}
+          title="Transaction Details"
+          showMore
+          onMorePress={handleShare}
+        />
 
         <ScrollView
           style={styles.scrollView}

@@ -9,29 +9,6 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: getFigmaDimension(24),
-    paddingVertical: getFigmaDimension(16),
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  headerTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: getFigmaDimension(24),
-    color: COLORS.textPrimary,
-  },
-  filterButton: {
-    width: getFigmaDimension(40),
-    height: getFigmaDimension(40),
-    borderRadius: getFigmaDimension(20),
-    backgroundColor: COLORS.backgroundGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.white,

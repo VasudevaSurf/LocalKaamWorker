@@ -14,6 +14,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './SendResponseScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 const QUICK_REPLIES = [
   "Yes, I'm available!",
@@ -91,18 +92,12 @@ const SendResponseScreen = () => {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Send Response</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          onBackPress={handleBack}
+          title="Send Response"
+        />
 
         <ScrollView
           style={styles.scrollView}

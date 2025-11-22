@@ -11,6 +11,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { styles } from './EarningsHomeScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 interface Transaction {
   id: string;
@@ -175,14 +176,16 @@ const EarningsHomeScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Earnings</Text>
-          <TouchableOpacity style={styles.downloadButton} activeOpacity={0.7}>
-            <Icon name="download" size={20} color={COLORS.primary} />
-            <Text style={styles.downloadText}>Report</Text>
-          </TouchableOpacity>
-        </View>
+        <Header
+          variant="simple"
+          title="Earnings"
+          rightComponent={
+            <TouchableOpacity style={styles.downloadButton} activeOpacity={0.7}>
+              <Icon name="download" size={20} color={COLORS.primary} />
+              <Text style={styles.downloadText}>Report</Text>
+            </TouchableOpacity>
+          }
+        />
 
         <ScrollView
           style={styles.scrollView}

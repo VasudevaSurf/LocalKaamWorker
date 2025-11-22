@@ -16,6 +16,7 @@ import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './AddVideoScreen.styles';
 import { COLORS } from '../../../utils';
+import Header from '../../../components/Header/Header';
 
 const VIDEO_CATEGORIES = [
   { id: '1', name: 'Electrical Work', icon: 'lightning-bolt' },
@@ -162,33 +163,19 @@ const AddVideoScreen = () => {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={handleBack}
-            activeOpacity={0.7}
-          >
-            <Icon name="arrow-left" size={24} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add Skill Video</Text>
-          <TouchableOpacity
-            style={styles.helpButton}
-            onPress={() =>
-              Alert.alert(
-                'Tips',
-                'Record a 10-30 second video showing your work skills',
-              )
-            }
-            activeOpacity={0.7}
-          >
-            <Icon
-              name="help-circle-outline"
-              size={24}
-              color={COLORS.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
+        <Header
+          variant="simple"
+          showBack
+          onBackPress={handleBack}
+          title="Add Skill Video"
+          showMore
+          onMorePress={() =>
+            Alert.alert(
+              'Tips',
+              'Record a 10-30 second video showing your work skills',
+            )
+          }
+        />
 
         <ScrollView
           style={styles.scrollView}

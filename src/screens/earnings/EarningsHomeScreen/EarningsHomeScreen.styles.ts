@@ -19,11 +19,6 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  headerTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: getFigmaDimension(24),
-    color: COLORS.textPrimary,
-  },
   downloadButton: {
     flexDirection: 'row',
     alignItems: 'center',

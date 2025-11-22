@@ -1,3 +1,4 @@
+// src/screens/jobs/JobsListScreen/JobsListScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -9,6 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Header from '../../../components/Header/Header';
 import { styles } from './JobsListScreen.styles';
 import { COLORS } from '../../../utils';
 
@@ -100,6 +102,10 @@ const JobsListScreen = () => {
     }
   };
 
+  const handleFilter = () => {
+    // Filter functionality
+  };
+
   const renderJobCard = (job: Job) => {
     const isNew = job.status === 'new';
     const isActive = job.status === 'active';
@@ -112,14 +118,12 @@ const JobsListScreen = () => {
         onPress={() => handleJobPress(job)}
         activeOpacity={0.7}
       >
-        {/* New Badge */}
         {isNew && (
           <View style={styles.newBadge}>
             <Text style={styles.newBadgeText}>NEW</Text>
           </View>
         )}
 
-        {/* Customer Info */}
         <View style={styles.customerSection}>
           <Image
             source={{ uri: job.customerImage }}
@@ -138,7 +142,6 @@ const JobsListScreen = () => {
           </View>
         </View>
 
-        {/* Job Details */}
         <View style={styles.jobDetails}>
           <Text style={styles.jobTitle}>{job.title}</Text>
           <Text style={styles.jobDescription} numberOfLines={2}>
@@ -146,7 +149,6 @@ const JobsListScreen = () => {
           </Text>
         </View>
 
-        {/* Job Meta */}
         <View style={styles.jobMeta}>
           <View style={styles.metaItem}>
             <Icon name="cash" size={18} color={COLORS.success} />
@@ -166,7 +168,6 @@ const JobsListScreen = () => {
           </View>
         </View>
 
-        {/* Actions */}
         <View style={styles.jobActions}>
           {isNew && (
             <>
@@ -229,13 +230,13 @@ const JobsListScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Jobs</Text>
-          <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
-            <Icon name="filter-variant" size={20} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-        </View>
+        {/* Header with Filter */}
+        <Header
+          variant="simple"
+          title="Jobs"
+          showMore
+          onMorePress={handleFilter}
+        />
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
@@ -298,7 +299,6 @@ const JobsListScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Jobs List */}
         <ScrollView
           style={styles.jobsList}
           contentContainerStyle={styles.jobsListContent}

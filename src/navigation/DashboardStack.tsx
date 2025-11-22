@@ -1,8 +1,9 @@
+// src/navigation/DashboardStack.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { DashboardStackParamList } from './types';
 
-// Import screens (we'll create these)
+// Import screens
 import DashboardHomeScreen from '../screens/dashboard/DashboardHomeScreen';
 import AddVideoScreen from '../screens/dashboard/AddVideoScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
@@ -17,9 +18,29 @@ const DashboardStack = () => {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="DashboardHome" component={DashboardHomeScreen} />
-      <Stack.Screen name="AddVideo" component={AddVideoScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen
+        name="DashboardHome"
+        component={DashboardHomeScreen}
+        options={
+          {
+            // Show tabs on home screen
+          }
+        }
+      />
+      <Stack.Screen
+        name="AddVideo"
+        component={AddVideoScreen}
+        options={({ navigation }) => ({
+          // This will be used by parent navigator
+        })}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={({ navigation }) => ({
+          // This will be used by parent navigator
+        })}
+      />
     </Stack.Navigator>
   );
 };
