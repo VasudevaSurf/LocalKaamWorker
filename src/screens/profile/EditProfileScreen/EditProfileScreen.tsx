@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../../context/AuthContext';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './EditProfileScreen.styles';
@@ -39,57 +40,33 @@ const EXPERIENCE_LEVELS = [
 
 const EditProfileScreen = () => {
   const navigation = useNavigation();
+  const { user, updateUser, uploadUserImage } = useAuth();
 
   const [profileImage, setProfileImage] = useState(
-    'https://via.placeholder.com/150',
+    user?.profileImage || 'https://via.placeholder.com/150',
   );
-  const [name, setName] = useState('Rajesh Kumar');
-  const [phone, setPhone] = useState('+91-98765-43210');
-  const [email, setEmail] = useState('rajesh.kumar@email.com');
-  const [selectedSkill, setSelectedSkill] = useState('Electrician');
-  const [experience, setExperience] = useState('15+ years');
-  const [city, setCity] = useState('Ludhiana');
-  const [state, setState] = useState('Punjab');
-  const [pincode, setPincode] = useState('141001');
-  const [about, setAbout] = useState(
-    'Professional electrician with 15+ years of experience in residential and commercial wiring.',
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phoneNumber || '');
+  const [email, setEmail] = useState(''); // Email not in user model yet
+  const [selectedSkill, setSelectedSkill] = useState(
+    user?.skill || 'Electrician',
   );
-  const [hourlyRate, setHourlyRate] = useState('500');
+  const [experience, setExperience] = useState(
+    user?.experience?.label || '0-2 years',
+  );
+  const [city, setCity] = useState(user?.city?.name || '');
+  const [state, setState] = useState(user?.city?.state || '');
+  const [pincode, setPincode] = useState('');
+  const [about, setAbout] = useState('');
+  const [hourlyRate, setHourlyRate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
-    if (hasChanges()) {
-      Alert.alert(
-        'Unsaved Changes',
-        'You have unsaved changes. Do you want to discard them?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Discard',
-            style: 'destructive',
-            onPress: () => navigation.goBack(),
-          },
-        ],
-      );
-    } else {
-      navigation.goBack();
-    }
-  };
-
-  const hasChanges = () => {
-    // Check if any field has changed
-    return true; // Simplified for demo
+    navigation.goBack();
   };
 
   const handleChangePhoto = () => {
     Alert.alert('Change Photo', 'Choose an option', [
-      {
-        text: 'Take Photo',
-        onPress: () => {
-          // Launch camera
-          Alert.alert('Camera', 'Camera functionality will open here');
-        },
-      },
       {
         text: 'Choose from Gallery',
         onPress: () => {
@@ -111,20 +88,42 @@ const EditProfileScreen = () => {
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !phone.trim() || !city.trim()) {
+    if (!name.trim() || !city.trim()) {
       Alert.alert('Incomplete', 'Please fill all required fields');
       return;
     }
 
     setIsLoading(true);
 
-    // TODO: API call to save profile
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // 1. Upload new image if changed (and not a remote URL)
+      let newImageUrl = profileImage;
+      if (
+        profileImage &&
+        profileImage !== user?.profileImage &&
+        !profileImage.startsWith('http')
+      ) {
+        newImageUrl = await uploadUserImage(profileImage);
+      }
+
+      // 2. Update Profile Data
+      await updateUser({
+        name,
+        skill: selectedSkill,
+        city: { name: city, state: state },
+        experience: { label: experience, value: experience }, // Simplified mapping
+        profileImage: newImageUrl,
+      });
+
       Alert.alert('Success', 'Profile updated successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
-    }, 1500);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

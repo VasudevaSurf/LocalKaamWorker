@@ -15,47 +15,9 @@ import { useAuth } from '../../../context/AuthContext';
 import { styles } from './ProfileHomeScreen.styles';
 import { COLORS } from '../../../utils';
 
-// Mock profile data
-const MOCK_PROFILE = {
-  name: 'Rajesh Kumar',
-  image: 'https://via.placeholder.com/150',
-  skill: 'Electrician',
-  experience: '15+ years',
-  rating: 4.8,
-  reviewsCount: 156,
-  jobsCompleted: 342,
-  location: 'Model Town, Ludhiana',
-  phone: '+91-98765-43210',
-  joinedDate: 'Jan 2024',
-  verified: true,
-  profileViews: 1234,
-  responseRate: 95,
-};
-
-const MOCK_VIDEOS = [
-  {
-    id: '1',
-    thumbnail: 'https://via.placeholder.com/150',
-    title: 'House Wiring',
-    views: 234,
-  },
-  {
-    id: '2',
-    thumbnail: 'https://via.placeholder.com/150',
-    title: 'MCB Installation',
-    views: 189,
-  },
-  {
-    id: '3',
-    thumbnail: 'https://via.placeholder.com/150',
-    title: 'Fan Installation',
-    views: 145,
-  },
-];
-
 const ProfileHomeScreen = () => {
   const navigation = useNavigation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth(); // Get user from context
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfile' as never);
@@ -85,6 +47,8 @@ const ProfileHomeScreen = () => {
   const handleShareProfile = () => {
     Alert.alert('Share Profile', 'Profile link copied to clipboard!');
   };
+
+  if (!user) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -119,10 +83,12 @@ const ProfileHomeScreen = () => {
 
             <View style={styles.profileImageContainer}>
               <Image
-                source={{ uri: MOCK_PROFILE.image }}
+                source={{
+                  uri: user.profileImage || 'https://via.placeholder.com/150',
+                }}
                 style={styles.profileImage}
               />
-              {MOCK_PROFILE.verified && (
+              {user.profileComplete && (
                 <View style={styles.verifiedBadge}>
                   <Icon
                     name="check-decagram"
@@ -133,29 +99,25 @@ const ProfileHomeScreen = () => {
               )}
             </View>
 
-            <Text style={styles.profileName}>{MOCK_PROFILE.name}</Text>
-            <Text style={styles.profileSkill}>{MOCK_PROFILE.skill}</Text>
+            <Text style={styles.profileName}>{user.name}</Text>
+            <Text style={styles.profileSkill}>{user.skill}</Text>
 
             <View style={styles.profileStats}>
               <View style={styles.statItem}>
                 <Icon name="star" size={20} color="#FCD34D" />
-                <Text style={styles.statValue}>{MOCK_PROFILE.rating}</Text>
+                <Text style={styles.statValue}>5.0</Text>
                 <Text style={styles.statLabel}>Rating</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Icon name="briefcase" size={20} color={COLORS.white} />
-                <Text style={styles.statValue}>
-                  {MOCK_PROFILE.jobsCompleted}
-                </Text>
+                <Text style={styles.statValue}>0</Text>
                 <Text style={styles.statLabel}>Jobs Done</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Icon name="account-group" size={20} color={COLORS.white} />
-                <Text style={styles.statValue}>
-                  {MOCK_PROFILE.reviewsCount}
-                </Text>
+                <Text style={styles.statValue}>0</Text>
                 <Text style={styles.statLabel}>Reviews</Text>
               </View>
             </View>
@@ -177,25 +139,25 @@ const ProfileHomeScreen = () => {
           <View style={styles.infoCardsContainer}>
             <View style={styles.infoCard}>
               <Icon name="map-marker" size={20} color={COLORS.primary} />
-              <Text style={styles.infoCardText}>{MOCK_PROFILE.location}</Text>
+              <Text style={styles.infoCardText}>
+                {user.city ? `${user.city.name}, ${user.city.state}` : 'N/A'}
+              </Text>
             </View>
 
             <View style={styles.infoCard}>
               <Icon name="briefcase" size={20} color={COLORS.success} />
               <Text style={styles.infoCardText}>
-                {MOCK_PROFILE.experience} experience
+                {user.experience?.label || 'N/A'} experience
               </Text>
             </View>
 
             <View style={styles.infoCard}>
-              <Icon name="calendar" size={20} color={COLORS.warning} />
-              <Text style={styles.infoCardText}>
-                Joined {MOCK_PROFILE.joinedDate}
-              </Text>
+              <Icon name="phone" size={20} color={COLORS.warning} />
+              <Text style={styles.infoCardText}>{user.phoneNumber}</Text>
             </View>
           </View>
 
-          {/* Performance Metrics */}
+          {/* Performance Metrics - Static for now */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Performance</Text>
 
@@ -205,9 +167,7 @@ const ProfileHomeScreen = () => {
                   <Icon name="eye" size={20} color={COLORS.info} />
                   <Text style={styles.metricLabel}>Profile Views</Text>
                 </View>
-                <Text style={styles.metricValue}>
-                  {MOCK_PROFILE.profileViews.toLocaleString()}
-                </Text>
+                <Text style={styles.metricValue}>0</Text>
               </View>
 
               <View style={styles.metricRow}>
@@ -216,7 +176,7 @@ const ProfileHomeScreen = () => {
                   <Text style={styles.metricLabel}>Response Rate</Text>
                 </View>
                 <Text style={[styles.metricValue, { color: COLORS.success }]}>
-                  {MOCK_PROFILE.responseRate}%
+                  100%
                 </Text>
               </View>
 
@@ -226,7 +186,7 @@ const ProfileHomeScreen = () => {
                   <Text style={styles.metricLabel}>Average Rating</Text>
                 </View>
                 <Text style={[styles.metricValue, { color: '#F59E0B' }]}>
-                  {MOCK_PROFILE.rating}/5.0
+                  5.0/5.0
                 </Text>
               </View>
             </View>
@@ -236,7 +196,7 @@ const ProfileHomeScreen = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
-                My Videos ({MOCK_VIDEOS.length})
+                My Videos ({user.workVideos?.length || 0})
               </Text>
               <TouchableOpacity activeOpacity={0.7}>
                 <Text style={styles.seeAllText}>See All</Text>
@@ -248,14 +208,17 @@ const ProfileHomeScreen = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.videosScroll}
             >
-              {MOCK_VIDEOS.map(video => (
+              {user.workVideos?.map((video, index) => (
                 <TouchableOpacity
-                  key={video.id}
+                  key={index}
                   style={styles.videoCard}
                   activeOpacity={0.7}
                 >
                   <Image
-                    source={{ uri: video.thumbnail }}
+                    source={{
+                      uri:
+                        video.thumbnailUrl || 'https://via.placeholder.com/150',
+                    }}
                     style={styles.videoThumbnail}
                   />
                   <View style={styles.videoOverlay}>
@@ -267,7 +230,7 @@ const ProfileHomeScreen = () => {
                     </Text>
                     <View style={styles.videoMeta}>
                       <Icon name="eye" size={12} color={COLORS.white} />
-                      <Text style={styles.videoViews}>{video.views} views</Text>
+                      <Text style={styles.videoViews}>0 views</Text>
                     </View>
                   </View>
                 </TouchableOpacity>

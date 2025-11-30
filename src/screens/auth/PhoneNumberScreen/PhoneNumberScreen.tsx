@@ -11,6 +11,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -81,16 +82,28 @@ const PhoneNumberScreen = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const auth = getAuth();
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        `+91${phoneNumber}`,
+      );
       setIsLoading(false);
       navigation.navigate(
         'OTPVerification' as never,
         {
           phoneNumber: `+91${phoneNumber}`,
+          confirmation,
         } as never,
       );
-    }, 1500);
+    } catch (error) {
+      setIsLoading(false);
+      console.log('Error sending OTP:', error);
+      Alert.alert(
+        'Error',
+        'Failed to send verification code. Please try again later.',
+      );
+    }
   };
 
   const handleBack = () => {
@@ -124,7 +137,7 @@ const PhoneNumberScreen = () => {
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
             style={styles.keyboardView}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             {/* Back Button */}
             <TouchableOpacity

@@ -1,60 +1,48 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   SafeAreaView,
   StatusBar,
   Animated,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useAuth } from '../../../context/AuthContext';
-import { AuthStackParamList } from '../../../navigation/types';
 import { styles } from './OTPVerificationScreen.styles';
 import { COLORS } from '../../../utils';
 
-type OTPVerificationRouteProp = RouteProp<
-  AuthStackParamList,
-  'OTPVerification'
->;
+import { getAuth, signInWithPhoneNumber } from '@react-native-firebase/auth';
+import { useAuth } from '../../../context/AuthContext';
 
 const OTPVerificationScreen = () => {
   const navigation = useNavigation();
-  const route = useRoute<OTPVerificationRouteProp>();
-  const { phoneNumber } = route.params;
+  const route = useRoute();
   const { login } = useAuth();
+  const { phoneNumber, confirmation } = route.params as {
+    phoneNumber: string;
+    confirmation: any;
+  };
 
+  const [confirmationResult, setConfirmationResult] = useState(confirmation);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(30);
-  const [canResend, setCanResend] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     startAnimations();
     startTimer();
   }, []);
-
-  useEffect(() => {
-    // Auto-verify when all 6 digits are entered
-    if (otp.every(digit => digit !== '')) {
-      handleVerify();
-    }
-  }, [otp]);
 
   const startAnimations = () => {
     Animated.parallel([
@@ -69,29 +57,7 @@ const OTPVerificationScreen = () => {
         friction: 8,
         useNativeDriver: true,
       }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
     ]).start();
-
-    // Pulse animation for icon
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
   };
 
   const startTimer = () => {
@@ -99,7 +65,6 @@ const OTPVerificationScreen = () => {
       setTimer(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          setCanResend(true);
           return 0;
         }
         return prev - 1;
@@ -107,43 +72,13 @@ const OTPVerificationScreen = () => {
     }, 1000);
   };
 
-  const shakeInputs = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnim, {
-        toValue: 10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: -10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: 10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnim, {
-        toValue: 0,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
   const handleOtpChange = (value: string, index: number) => {
-    const cleaned = value.replace(/[^0-9]/g, '');
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
 
-    if (cleaned.length <= 1) {
-      const newOtp = [...otp];
-      newOtp[index] = cleaned;
-      setOtp(newOtp);
-
-      // Auto-focus next input
-      if (cleaned && index < 5) {
-        inputRefs.current[index + 1]?.focus();
-      }
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -154,55 +89,50 @@ const OTPVerificationScreen = () => {
   };
 
   const handleVerify = async () => {
-    const otpCode = otp.join('');
-
-    if (otpCode.length !== 6) {
+    const otpString = otp.join('');
+    if (otpString.length !== 6) {
+      Alert.alert('Invalid OTP', 'Please enter a valid 6-digit OTP');
       return;
     }
 
-    setIsVerifying(true);
+    setIsLoading(true);
 
     try {
-      const success = await login(phoneNumber, otpCode);
-
-      if (success) {
-        setIsVerifying(false);
-        // No need to navigate manually - RootNavigator will automatically
-        // show ProfileSetup screens since profileComplete is false
-      } else {
-        setIsVerifying(false);
-        shakeInputs();
-        Alert.alert('Invalid OTP', 'Please check the code and try again');
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      }
+      await confirmationResult.confirm(otpString);
+      // Update Auth Context to trigger navigation
+      await login(phoneNumber, otpString);
+      Alert.alert('Success', 'Phone number verified successfully!');
     } catch (error) {
-      setIsVerifying(false);
-      shakeInputs();
-      Alert.alert('Error', 'Something went wrong. Please try again');
+      console.log('Invalid code.', error);
+      Alert.alert('Error', 'Invalid OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleResend = () => {
-    if (!canResend) return;
+  const handleResend = async () => {
+    if (timer > 0) return;
 
-    setTimer(30);
-    setCanResend(false);
-    setOtp(['', '', '', '', '', '']);
-    inputRefs.current[0]?.focus();
-    startTimer();
+    try {
+      const auth = getAuth();
+      const newConfirmation = await signInWithPhoneNumber(auth, phoneNumber);
+      // Update the confirmation object in route params or local state if possible
+      // Since route params are read-only, we might need a local state for confirmation
+      // For now, we'll just use the new confirmation for verification if we could update it.
+      // However, the best way is to update a local ref or state.
+      // Let's add a state for confirmation.
+      setConfirmationResult(newConfirmation);
 
-    Alert.alert(
-      'OTP Sent',
-      'A new verification code has been sent to your phone',
-    );
+      setTimer(30);
+      startTimer();
+      Alert.alert('Resend OTP', 'OTP resent successfully!');
+    } catch (error) {
+      console.log('Error resending OTP:', error);
+      Alert.alert('Error', 'Failed to resend OTP. Please try again.');
+    }
   };
 
   const handleBack = () => {
-    navigation.goBack();
-  };
-
-  const handleEditNumber = () => {
     navigation.goBack();
   };
 
@@ -223,7 +153,7 @@ const OTPVerificationScreen = () => {
         <SafeAreaView style={styles.safeArea}>
           <KeyboardAvoidingView
             style={styles.keyboardView}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             {/* Back Button */}
             <TouchableOpacity
@@ -235,192 +165,111 @@ const OTPVerificationScreen = () => {
             </TouchableOpacity>
 
             <View style={styles.content}>
-              {/* Icon Section */}
+              {/* Header Section */}
               <Animated.View
                 style={[
-                  styles.iconSection,
-                  {
-                    opacity: fadeAnim,
-                    transform: [{ scale: pulseAnim }],
-                  },
-                ]}
-              >
-                {/* Background Effects */}
-                <View style={styles.circleOuter} />
-                <View style={styles.circleMiddle} />
-
-                <LinearGradient
-                  colors={['#8B5CF6', '#6D28D9']}
-                  style={styles.iconCircle}
-                >
-                  <Icon
-                    name="message-text-lock"
-                    size={70}
-                    color={COLORS.white}
-                  />
-                </LinearGradient>
-
-                {/* Floating Elements */}
-                <View style={[styles.floatingDot, styles.dot1]} />
-                <View style={[styles.floatingDot, styles.dot2]} />
-                <View style={[styles.floatingDot, styles.dot3]} />
-              </Animated.View>
-
-              {/* Text Section */}
-              <Animated.View
-                style={[
-                  styles.textSection,
+                  styles.headerSection,
                   {
                     opacity: fadeAnim,
                     transform: [{ translateY: slideAnim }],
                   },
                 ]}
               >
-                <Text style={styles.title}>Verify Your Number</Text>
-                <Text style={styles.subtitle}>
-                  Enter the 6-digit code sent to
-                </Text>
-
-                {/* Phone Number with Edit */}
-                <View style={styles.phoneContainer}>
-                  <Text style={styles.phoneNumber}>{phoneNumber}</Text>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={handleEditNumber}
-                    activeOpacity={0.7}
-                  >
-                    <Icon name="pencil" size={16} color={COLORS.primary} />
-                  </TouchableOpacity>
+                <View style={styles.iconContainer}>
+                  <Icon name="message-lock" size={40} color={COLORS.primary} />
                 </View>
+                <Text style={styles.title}>Verification Code</Text>
+                <Text style={styles.subtitle}>
+                  We have sent the verification code to
+                  {'\n'}
+                  <Text style={styles.phoneNumber}>{phoneNumber}</Text>
+                </Text>
               </Animated.View>
 
               {/* OTP Input Section */}
               <Animated.View
                 style={[
-                  styles.otpSection,
+                  styles.inputSection,
                   {
                     opacity: fadeAnim,
-                    transform: [
-                      { translateY: slideAnim },
-                      { translateX: shakeAnim },
-                    ],
+                    transform: [{ translateY: slideAnim }],
                   },
                 ]}
               >
                 <View style={styles.otpContainer}>
                   {otp.map((digit, index) => (
-                    <View
+                    <TextInput
                       key={index}
+                      ref={ref => {
+                        inputRefs.current[index] = ref;
+                      }}
                       style={[
-                        styles.otpInputWrapper,
-                        digit !== '' && styles.otpInputWrapperFilled,
+                        styles.otpInput,
+                        digit ? styles.otpInputFilled : null,
                       ]}
-                    >
-                      <LinearGradient
-                        colors={
-                          digit !== ''
-                            ? ['#8B5CF6', '#6D28D9']
-                            : ['#FFFFFF', '#F9FAFB']
-                        }
-                        style={styles.otpInputGradient}
-                      >
-                        <TextInput
-                          ref={ref => (inputRefs.current[index] = ref)}
-                          style={[
-                            styles.otpInput,
-                            digit !== '' && styles.otpInputFilled,
-                          ]}
-                          value={digit}
-                          onChangeText={value => handleOtpChange(value, index)}
-                          onKeyPress={e => handleKeyPress(e, index)}
-                          keyboardType="number-pad"
-                          maxLength={1}
-                          selectTextOnFocus
-                          autoFocus={index === 0}
-                        />
-                      </LinearGradient>
-                    </View>
+                      value={digit}
+                      onChangeText={value => handleOtpChange(value, index)}
+                      onKeyPress={e => handleKeyPress(e, index)}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      selectTextOnFocus
+                    />
                   ))}
                 </View>
 
-                {/* Timer / Resend */}
                 <View style={styles.resendContainer}>
-                  {canResend ? (
-                    <TouchableOpacity
-                      style={styles.resendButton}
-                      onPress={handleResend}
-                      activeOpacity={0.7}
+                  <Text style={styles.resendText}>Didn't receive code? </Text>
+                  <TouchableOpacity onPress={handleResend} disabled={timer > 0}>
+                    <Text
+                      style={[
+                        styles.resendLink,
+                        timer > 0 && styles.resendLinkDisabled,
+                      ]}
                     >
-                      <Icon name="refresh" size={18} color={COLORS.primary} />
-                      <Text style={styles.resendText}>Resend Code</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={styles.timerContainer}>
-                      <Icon
-                        name="clock-outline"
-                        size={18}
-                        color={COLORS.textSecondary}
-                      />
-                      <Text style={styles.timerText}>
-                        Resend code in{' '}
-                        <Text style={styles.timerHighlight}>{timer}s</Text>
-                      </Text>
-                    </View>
-                  )}
+                      {timer > 0 ? `Resend in ${timer}s` : 'Resend Code'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </Animated.View>
 
-              {/* Info Card */}
+              <View style={styles.spacer} />
+
+              {/* Verify Button */}
               <Animated.View
                 style={[
-                  styles.infoCard,
+                  styles.buttonSection,
                   {
                     opacity: fadeAnim,
                   },
                 ]}
               >
-                <View style={styles.infoRow}>
-                  <Icon name="shield-check" size={20} color={COLORS.success} />
-                  <Text style={styles.infoText}>
-                    Your phone number is encrypted and secure
-                  </Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Icon name="message-alert" size={20} color={COLORS.warning} />
-                  <Text style={styles.infoText}>
-                    Didn't receive code? Check your SMS inbox
-                  </Text>
-                </View>
-              </Animated.View>
-
-              {/* Spacer */}
-              <View style={styles.spacer} />
-
-              {/* Verify Button */}
-              {isVerifying && (
-                <Animated.View
+                <TouchableOpacity
                   style={[
-                    styles.verifyingContainer,
-                    {
-                      opacity: fadeAnim,
-                    },
+                    styles.verifyButton,
+                    otp.join('').length !== 6 && styles.verifyButtonDisabled,
                   ]}
+                  onPress={handleVerify}
+                  disabled={otp.join('').length !== 6 || isLoading}
+                  activeOpacity={0.9}
                 >
                   <LinearGradient
-                    colors={['#8B5CF6', '#6D28D9']}
-                    style={styles.verifyingCard}
+                    colors={
+                      otp.join('').length === 6
+                        ? ['#2563EB', '#1E40AF']
+                        : ['#D1D5DB', '#9CA3AF']
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.verifyButtonGradient}
                   >
-                    <View style={styles.verifyingContent}>
-                      <Icon
-                        name="shield-check"
-                        size={32}
-                        color={COLORS.white}
-                      />
-                      <Text style={styles.verifyingText}>Verifying...</Text>
-                    </View>
+                    {isLoading ? (
+                      <Text style={styles.verifyButtonText}>Verifying...</Text>
+                    ) : (
+                      <Text style={styles.verifyButtonText}>Verify OTP</Text>
+                    )}
                   </LinearGradient>
-                </Animated.View>
-              )}
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>

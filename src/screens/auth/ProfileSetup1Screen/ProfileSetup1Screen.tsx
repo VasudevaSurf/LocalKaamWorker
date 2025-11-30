@@ -40,7 +40,7 @@ const SKILLS: Skill[] = [
 
 const ProfileSetup1Screen = () => {
   const navigation = useNavigation<AuthNavigationProp>();
-  const { updateUser } = useAuth(); // Add this line
+  const { updateUser, uploadUserImage } = useAuth(); // Add this line
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [selectedSkill, setSelectedSkill] = useState<string>('');
@@ -105,18 +105,15 @@ const ProfileSetup1Screen = () => {
       // Get the selected skill name
       const skillName = SKILLS.find(s => s.id === selectedSkill)?.name || '';
 
-      // Save data to user context
-      await updateUser({
+      // Navigate to next step with data
+      navigation.navigate('ProfileSetup2', {
         name: fullName.trim(),
         skill: skillName,
-        // profileComplete remains false until ProfileSetup2 is done
+        profileImageUri: profileImage,
       });
-
-      // Navigate to next step
-      navigation.navigate('ProfileSetup2');
     } catch (error) {
-      console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to save profile data. Please try again.');
+      console.error('Error navigating:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
 

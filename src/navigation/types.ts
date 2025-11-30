@@ -9,7 +9,11 @@ export type AuthStackParamList = {
   PhoneNumber: undefined;
   OTPVerification: { phoneNumber: string };
   ProfileSetup1: undefined;
-  ProfileSetup2: undefined;
+  ProfileSetup2: {
+    name: string;
+    skill: string;
+    profileImageUri: string | null;
+  };
 };
 
 // Main Bottom Tabs

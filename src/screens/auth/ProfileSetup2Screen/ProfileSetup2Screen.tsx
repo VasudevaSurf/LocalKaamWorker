@@ -9,7 +9,11 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  launchImageLibrary,
+  ImagePickerResponse,
+} from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Modal from 'react-native-modal';
 import { AuthNavigationProp } from '../../../navigation/types';
@@ -55,14 +59,31 @@ const EXPERIENCE_OPTIONS: Experience[] = [
 
 const ProfileSetup2Screen = () => {
   const navigation = useNavigation<AuthNavigationProp>();
+  const route = useRoute();
+  const { name, skill, profileImageUri } = (route.params as any) || {}; // Cast to any to avoid type errors
 
-  const { updateUser } = useAuth();
+  const { updateUser, uploadUserVideo, uploadUserImage } = useAuth(); // Add uploadUserImage
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedExperience, setSelectedExperience] =
     useState<Experience | null>(null);
   const [showCityModal, setShowCityModal] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+
+  const handleVideoPicker = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'video',
+        quality: 0.8,
+      },
+      (response: ImagePickerResponse) => {
+        if (response.assets && response.assets[0].uri) {
+          setVideoUri(response.assets[0].uri);
+        }
+      },
+    );
+  };
 
   const isFormValid = () => {
     return selectedCity !== null && selectedExperience !== null;
@@ -77,14 +98,27 @@ const ProfileSetup2Screen = () => {
     setIsLoading(true);
 
     try {
-      // TODO: API call to save profile data
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 1. Upload Profile Image (if exists)
+      let profileImageUrl = '';
+      if (profileImageUri) {
+        profileImageUrl = await uploadUserImage(profileImageUri);
+      }
 
-      // Update user profile with complete data
+      // 2. Upload Intro Video (if exists)
+      let videoUrl = '';
+      if (videoUri) {
+        videoUrl = await uploadUserVideo(videoUri);
+      }
+
+      // 3. Save ALL Data to Backend
       await updateUser({
-        // Add city and experience data here from state
-        profileComplete: true, // Mark profile as complete
+        name: name,
+        skill: skill,
+        city: selectedCity || undefined,
+        experience: selectedExperience || undefined,
+        profileImage: profileImageUrl,
+        profileVideo: videoUrl,
+        profileComplete: true,
       });
 
       // Success message

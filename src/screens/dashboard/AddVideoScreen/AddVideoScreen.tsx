@@ -17,6 +17,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './AddVideoScreen.styles';
 import { COLORS } from '../../../utils';
 import Header from '../../../components/Header/Header';
+import { useAuth } from '../../../context/AuthContext';
 
 const VIDEO_CATEGORIES = [
   { id: '1', name: 'Electrical Work', icon: 'lightning-bolt' },
@@ -31,6 +32,7 @@ const VIDEO_CATEGORIES = [
 
 const AddVideoScreen = () => {
   const navigation = useNavigation();
+  const { uploadUserVideo } = useAuth();
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
@@ -134,27 +136,43 @@ const AddVideoScreen = () => {
 
     setIsUploading(true);
 
-    // TODO: API call to upload video
-    setTimeout(() => {
+    try {
+      if (videoUri) {
+        await uploadUserVideo(videoUri, {
+          title,
+          description,
+          category: selectedCategory,
+          tags,
+        });
+
+        Alert.alert(
+          'Success! 🎉',
+          'Your video has been uploaded successfully!',
+          [
+            {
+              text: 'Add Another',
+              onPress: () => {
+                setVideoUri(null);
+                setThumbnailUri(null);
+                setTitle('');
+                setDescription('');
+                setSelectedCategory('');
+                setTags([]);
+              },
+            },
+            {
+              text: 'Done',
+              onPress: () => navigation.goBack(),
+            },
+          ],
+        );
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      Alert.alert('Upload Failed', 'Please try again later.');
+    } finally {
       setIsUploading(false);
-      Alert.alert('Success! 🎉', 'Your video has been uploaded successfully!', [
-        {
-          text: 'Add Another',
-          onPress: () => {
-            setVideoUri(null);
-            setThumbnailUri(null);
-            setTitle('');
-            setDescription('');
-            setSelectedCategory('');
-            setTags([]);
-          },
-        },
-        {
-          text: 'Done',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
-    }, 2000);
+    }
   };
 
   return (
@@ -219,17 +237,39 @@ const AddVideoScreen = () => {
                 </View>
               </View>
             ) : (
-              <TouchableOpacity
-                style={styles.uploadButton}
-                onPress={handleVideoSelection}
-                activeOpacity={0.7}
-              >
-                <Icon name="video-plus" size={48} color={COLORS.primary} />
-                <Text style={styles.uploadButtonText}>Tap to add video</Text>
-                <Text style={styles.uploadButtonHint}>
-                  Record new or choose from gallery
-                </Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  style={[styles.uploadButton, { flex: 1 }]}
+                  onPress={handleRecordVideo}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="camera" size={32} color={COLORS.primary} />
+                  <Text
+                    style={[
+                      styles.uploadButtonText,
+                      { fontSize: 14, marginTop: 8 },
+                    ]}
+                  >
+                    Record Video
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.uploadButton, { flex: 1 }]}
+                  onPress={handleGalleryVideo}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="folder-image" size={32} color={COLORS.primary} />
+                  <Text
+                    style={[
+                      styles.uploadButtonText,
+                      { fontSize: 14, marginTop: 8 },
+                    ]}
+                  >
+                    From Gallery
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )}
 
             {/* Requirements */}

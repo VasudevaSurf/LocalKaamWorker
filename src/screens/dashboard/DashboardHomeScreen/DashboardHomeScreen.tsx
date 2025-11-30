@@ -14,8 +14,11 @@ import Header from '../../../components/Header/Header';
 import { styles } from './DashboardHomeScreen.styles';
 import { COLORS } from '../../../utils';
 
+import { useAuth } from '../../../context/AuthContext';
+
 const DashboardHomeScreen = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -48,13 +51,13 @@ const DashboardHomeScreen = () => {
       <Header
         variant="profile"
         showProfile={true}
-        profileImage="https://via.placeholder.com/50"
-        profileName="Rajesh Kumar"
+        profileImage={user?.profileImage || 'https://via.placeholder.com/50'}
+        profileName={user?.name || 'User'}
         greeting="Welcome back,"
         showOnlineBadge={true}
         onProfilePress={handleProfilePress}
         showNotification={true}
-        notificationCount={3}
+        notificationCount={0}
         onNotificationPress={handleNotifications}
       />
 
@@ -71,10 +74,10 @@ const DashboardHomeScreen = () => {
               <Icon name="wallet" size={28} color={COLORS.white} />
             </View>
             <Text style={styles.statsLabel}>This Month</Text>
-            <Text style={styles.statsValue}>₹24,800</Text>
+            <Text style={styles.statsValue}>₹0</Text>
             <View style={styles.statsChange}>
-              <Icon name="trending-up" size={16} color="#10B981" />
-              <Text style={styles.statsChangeText}>+32% vs last month</Text>
+              <Icon name="trending-flat" size={16} color={COLORS.white} />
+              <Text style={styles.statsChangeText}>No earnings yet</Text>
             </View>
           </LinearGradient>
 
@@ -85,7 +88,7 @@ const DashboardHomeScreen = () => {
             >
               <Icon name="briefcase" size={24} color="#D97706" />
               <Text style={[styles.smallStatsValue, { color: '#92400E' }]}>
-                23
+                0
               </Text>
               <Text style={[styles.smallStatsLabel, { color: '#78350F' }]}>
                 Jobs Done
@@ -98,7 +101,7 @@ const DashboardHomeScreen = () => {
             >
               <Icon name="star" size={24} color="#1E40AF" />
               <Text style={[styles.smallStatsValue, { color: '#1E3A8A' }]}>
-                4.8
+                0.0
               </Text>
               <Text style={[styles.smallStatsLabel, { color: '#1E40AF' }]}>
                 Rating
@@ -208,61 +211,17 @@ const DashboardHomeScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
           </View>
 
-          <View style={styles.activityCard}>
-            <View style={styles.activityIconContainer}>
-              <Icon name="cash" size={24} color={COLORS.success} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>Payment Received</Text>
-              <Text style={styles.activityDescription}>
-                From Amit Singh - House Wiring
-              </Text>
-              <Text style={styles.activityTime}>2 hours ago</Text>
-            </View>
-            <Text style={styles.activityAmount}>+₹2,400</Text>
-          </View>
-
-          <View style={styles.activityCard}>
-            <View
-              style={[
-                styles.activityIconContainer,
-                { backgroundColor: '#EFF6FF' },
-              ]}
-            >
-              <Icon name="briefcase" size={24} color={COLORS.primary} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>New Job Inquiry</Text>
-              <Text style={styles.activityDescription}>
-                Kitchen Electrical Work
-              </Text>
-              <Text style={styles.activityTime}>5 hours ago</Text>
-            </View>
-            <Icon name="chevron-right" size={24} color={COLORS.textSecondary} />
-          </View>
-
-          <View style={styles.activityCard}>
-            <View
-              style={[
-                styles.activityIconContainer,
-                { backgroundColor: '#FEF3C7' },
-              ]}
-            >
-              <Icon name="star" size={24} color="#D97706" />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>New Review</Text>
-              <Text style={styles.activityDescription}>
-                5 stars from Priya Sharma
-              </Text>
-              <Text style={styles.activityTime}>1 day ago</Text>
-            </View>
-            <Icon name="chevron-right" size={24} color={COLORS.textSecondary} />
+          <View
+            style={[
+              styles.activityCard,
+              { justifyContent: 'center', alignItems: 'center', padding: 20 },
+            ]}
+          >
+            <Text style={{ color: COLORS.textSecondary }}>
+              No recent activity
+            </Text>
           </View>
         </View>
 

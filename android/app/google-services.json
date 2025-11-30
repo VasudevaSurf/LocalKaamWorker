@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "345215452170",
+    "project_id": "localkaam-1228d",
+    "storage_bucket": "localkaam-1228d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345215452170:android:426dd519a0c9b48b1d8bf3",
+        "android_client_info": {
+          "package_name": "com.localkaamworker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-fjF5bE9aa36bLkxkAAmvHL8ldMrGZhk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

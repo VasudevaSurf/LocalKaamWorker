@@ -38,7 +38,7 @@ const LanguageSelectionScreen = () => {
 
   const handleContinue = () => {
     // Save language preference
-    navigation.navigate('WelcomeCarousel' as never);
+    navigation.navigate('OnboardingCarousel' as never);
   };
 
   return (
