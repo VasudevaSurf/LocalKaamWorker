@@ -22,6 +22,7 @@ import {
   updateUserFailure,
   clearUser,
 } from '../store/slices/userSlice';
+import { cache } from '../utils/cache';
 
 interface User {
   id: string;
@@ -50,8 +51,6 @@ interface User {
   }[];
 }
 
-// ... (AuthContextType remains mostly the same, but check usages)
-
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -72,6 +71,7 @@ interface AuthContextType {
   ) => Promise<string>;
   checkAuthStatus: () => Promise<boolean>;
   setOnboardingComplete: () => Promise<void>;
+  refreshUserProfile: (forceRefresh?: boolean) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,11 +90,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const refreshUserProfile = async () => {
+  const refreshUserProfile = async (forceRefresh: boolean = false) => {
     try {
       if (user?.phoneNumber) {
+        const cacheKey = `user_profile_${user.phoneNumber}`;
+
+        // Try to get from cache first if not forced
+        if (!forceRefresh) {
+          const cachedUser = await cache.get<User>(cacheKey);
+          if (cachedUser) {
+            console.log('[AuthContext] Using cached user profile');
+            dispatch(setUser(cachedUser));
+            return;
+          }
+        }
+
+        // If forced, not in cache, or expired, fetch from API
+        console.log(
+          `[AuthContext] Fetching user profile from API (Force: ${forceRefresh})`,
+        );
         const updatedUser = await api.getProfile(user.phoneNumber);
         if (updatedUser) {
+          await cache.set(cacheKey, updatedUser);
           dispatch(setUser(updatedUser));
         }
       }
@@ -133,21 +150,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       dispatch(loginStart());
       // Fetch user profile from backend
       try {
-        // Ensure phone number has +91 prefix if missing (assuming India)
         const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
-        console.log(
-          `[AuthContext] Original Phone: '${phone}', Formatted: '${formattedPhone}'`,
-        );
+        const cacheKey = `user_profile_${formattedPhone}`;
+
+        // Check cache first
+        const cachedUser = await cache.get<User>(cacheKey);
+        if (cachedUser) {
+          console.log('[AuthContext] Login: User found in cache');
+          dispatch(setUser(cachedUser));
+          dispatch(loginSuccess('mock_token_123'));
+          return true;
+        }
 
         const existingUser = await api.getProfile(formattedPhone);
         if (existingUser) {
           console.log('User found:', existingUser);
+          await cache.set(cacheKey, existingUser);
           dispatch(setUser(existingUser));
           dispatch(loginSuccess('mock_token_123'));
           return true;
         }
       } catch (error: any) {
-        // If 404, it means user doesn't exist, so we proceed to create new
         if (error.response && error.response.status === 404) {
           console.log('User not found in DB, proceeding to setup new profile.');
         } else {
@@ -175,6 +198,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      if (user?.phoneNumber) {
+        await cache.remove(`user_profile_${user.phoneNumber}`);
+      }
       dispatch(logoutAction());
       dispatch(clearUser());
     } catch (error) {
@@ -187,12 +213,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!user) return;
       dispatch(updateUserStart());
 
-      // Call Backend API
       const updatedProfile = await api.updateProfile({
         ...userData,
         phoneNumber: user.phoneNumber,
         firebaseUid: auth().currentUser?.uid || '',
       });
+
+      // Update cache with new data
+      const cacheKey = `user_profile_${user.phoneNumber}`;
+      const currentUserData = (await cache.get<User>(cacheKey)) || user;
+      const newUserData = { ...currentUserData, ...userData };
+      await cache.set(cacheKey, newUserData);
 
       dispatch(updateUserSuccess(userData));
     } catch (error) {
@@ -207,7 +238,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!user) throw new Error('User not logged in');
       const response = await api.uploadImage(imageUri, user.phoneNumber);
 
-      // Update Redux state with new image URL
+      // Update cache
+      const cacheKey = `user_profile_${user.phoneNumber}`;
+      const currentUserData = (await cache.get<User>(cacheKey)) || user;
+      const newUserData = {
+        ...currentUserData,
+        profileImage: response.imageUrl,
+      };
+      await cache.set(cacheKey, newUserData);
+
       dispatch(updateUserSuccess({ profileImage: response.imageUrl }));
 
       return response.imageUrl;
@@ -234,8 +273,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         metadata,
       );
 
-      // Update Redux state with new videos list
       if (response.workVideos) {
+        // Update cache
+        const cacheKey = `user_profile_${user.phoneNumber}`;
+        const currentUserData = (await cache.get<User>(cacheKey)) || user;
+        const newUserData = {
+          ...currentUserData,
+          workVideos: response.workVideos,
+        };
+        await cache.set(cacheKey, newUserData);
+
         dispatch(updateUserSuccess({ workVideos: response.workVideos }));
       }
 
@@ -260,6 +307,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uploadUserVideo,
         checkAuthStatus,
         setOnboardingComplete,
+        refreshUserProfile,
       }}
     >
       {children}

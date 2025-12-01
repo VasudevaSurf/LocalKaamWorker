@@ -8,6 +8,8 @@ import ProfileHomeScreen from '../screens/profile/ProfileHomeScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import SettingsScreen from '../screens/profile/SettingsScreen';
 import HelpScreen from '../screens/profile/HelpScreen';
+import MyVideosScreen from '../screens/profile/MyVideosScreen/MyVideosScreen';
+import VideoDetailScreen from '../screens/profile/VideoDetailScreen/VideoDetailScreen';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -23,6 +25,8 @@ const ProfileStack = () => {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Help" component={HelpScreen} />
+      <Stack.Screen name="MyVideos" component={MyVideosScreen} />
+      <Stack.Screen name="VideoDetail" component={VideoDetailScreen} />
     </Stack.Navigator>
   );
 };

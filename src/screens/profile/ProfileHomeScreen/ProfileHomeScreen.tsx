@@ -11,6 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import Video from 'react-native-video';
 import { useAuth } from '../../../context/AuthContext';
 import { styles } from './ProfileHomeScreen.styles';
 import { COLORS } from '../../../utils';
@@ -212,15 +213,26 @@ const ProfileHomeScreen = () => {
                 <TouchableOpacity
                   key={index}
                   style={styles.videoCard}
+                  onPress={() =>
+                    navigation.navigate('VideoDetail', { video } as never)
+                  }
                   activeOpacity={0.7}
                 >
-                  <Image
-                    source={{
-                      uri:
-                        video.thumbnailUrl || 'https://via.placeholder.com/150',
-                    }}
-                    style={styles.videoThumbnail}
-                  />
+                  {video.thumbnailUrl ? (
+                    <Image
+                      source={{ uri: video.thumbnailUrl }}
+                      style={styles.videoThumbnail}
+                    />
+                  ) : (
+                    <Video
+                      source={{ uri: video.videoUrl }}
+                      style={styles.videoThumbnail}
+                      paused={true}
+                      muted={true}
+                      resizeMode="cover"
+                      controls={false}
+                    />
+                  )}
                   <View style={styles.videoOverlay}>
                     <Icon name="play-circle" size={40} color={COLORS.white} />
                   </View>
@@ -229,8 +241,12 @@ const ProfileHomeScreen = () => {
                       {video.title}
                     </Text>
                     <View style={styles.videoMeta}>
-                      <Icon name="eye" size={12} color={COLORS.white} />
-                      <Text style={styles.videoViews}>0 views</Text>
+                      <Icon
+                        name="clock-outline"
+                        size={12}
+                        color={COLORS.white}
+                      />
+                      <Text style={styles.videoViews}>05:30</Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -272,7 +288,7 @@ const ProfileHomeScreen = () => {
 
               <TouchableOpacity
                 style={styles.menuItem}
-                onPress={() => Alert.alert('My Videos')}
+                onPress={() => navigation.navigate('MyVideos' as never)}
                 activeOpacity={0.7}
               >
                 <View style={styles.menuLeft}>

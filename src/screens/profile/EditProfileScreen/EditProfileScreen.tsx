@@ -30,14 +30,6 @@ const SKILLS = [
   'Gardener',
 ];
 
-const EXPERIENCE_LEVELS = [
-  '0-2 years',
-  '2-5 years',
-  '5-10 years',
-  '10-15 years',
-  '15+ years',
-];
-
 const EditProfileScreen = () => {
   const navigation = useNavigation();
   const { user, updateUser, uploadUserImage } = useAuth();
@@ -51,17 +43,25 @@ const EditProfileScreen = () => {
   const [selectedSkill, setSelectedSkill] = useState(
     user?.skill || 'Electrician',
   );
-  const [experience, setExperience] = useState(
-    user?.experience?.label || '0-2 years',
-  );
+
+  // Parse initial experience
+  const initialExpLabel =
+    user?.experience?.label ||
+    (typeof user?.experience === 'string' ? user.experience : '') ||
+    '';
+  const initialYears = initialExpLabel.match(/(\d+)/)?.[0] || '';
+
+  const [expYears, setExpYears] = useState(initialYears);
+  const [expMonths, setExpMonths] = useState('');
+
   const [city, setCity] = useState(user?.city?.name || '');
   const [state, setState] = useState(user?.city?.state || '');
   const [pincode, setPincode] = useState('');
   const [about, setAbout] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
+    console.log('Navigating back');
     navigation.goBack();
   };
 
@@ -88,6 +88,7 @@ const EditProfileScreen = () => {
   };
 
   const handleSave = async () => {
+    console.log('Saving profile...');
     if (!name.trim() || !city.trim()) {
       Alert.alert('Incomplete', 'Please fill all required fields');
       return;
@@ -106,12 +107,19 @@ const EditProfileScreen = () => {
         newImageUrl = await uploadUserImage(profileImage);
       }
 
+      // Format experience string
+      const years = parseInt(expYears || '0');
+      const months = parseInt(expMonths || '0');
+      const experienceString = `${years} Years ${
+        months > 0 ? `${months} Months` : ''
+      }`.trim();
+
       // 2. Update Profile Data
       await updateUser({
         name,
         skill: selectedSkill,
         city: { name: city, state: state },
-        experience: { label: experience, value: experience }, // Simplified mapping
+        experience: { label: experienceString, value: `${years}.${months}` },
         profileImage: newImageUrl,
       });
 
@@ -265,43 +273,31 @@ const EditProfileScreen = () => {
               <Text style={styles.label}>
                 Experience <Text style={styles.required}>*</Text>
               </Text>
-              <View style={styles.experienceContainer}>
-                {EXPERIENCE_LEVELS.map(level => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[
-                      styles.experienceChip,
-                      experience === level && styles.experienceChipSelected,
-                    ]}
-                    onPress={() => setExperience(level)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.experienceText,
-                        experience === level && styles.experienceTextSelected,
-                      ]}
-                    >
-                      {level}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Hourly Rate (₹)</Text>
-              <View style={styles.inputContainer}>
-                <Icon name="cash" size={20} color={COLORS.textSecondary} />
-                <TextInput
-                  style={styles.input}
-                  value={hourlyRate}
-                  onChangeText={setHourlyRate}
-                  placeholder="500"
-                  placeholderTextColor={COLORS.gray400}
-                  keyboardType="numeric"
-                />
-                <Text style={styles.perHour}>/hour</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={[styles.inputContainer, { flex: 1 }]}>
+                  <TextInput
+                    style={styles.input}
+                    value={expYears}
+                    onChangeText={setExpYears}
+                    placeholder="0"
+                    placeholderTextColor={COLORS.gray400}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                  <Text style={styles.perHour}>Years</Text>
+                </View>
+                <View style={[styles.inputContainer, { flex: 1 }]}>
+                  <TextInput
+                    style={styles.input}
+                    value={expMonths}
+                    onChangeText={setExpMonths}
+                    placeholder="0"
+                    placeholderTextColor={COLORS.gray400}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
+                  <Text style={styles.perHour}>Months</Text>
+                </View>
               </View>
             </View>
 

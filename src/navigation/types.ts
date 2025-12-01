@@ -53,6 +53,8 @@ export type ProfileStackParamList = {
   EditProfile: undefined;
   Settings: undefined;
   Help: undefined;
+  MyVideos: undefined;
+  VideoDetail: { video: any }; // Using 'any' for now, should be Video type
 };
 
 // Navigation Props
