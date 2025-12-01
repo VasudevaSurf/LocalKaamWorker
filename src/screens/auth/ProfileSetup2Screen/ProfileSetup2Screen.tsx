@@ -119,6 +119,7 @@ const ProfileSetup2Screen = () => {
         profileImage: profileImageUrl,
         profileVideo: videoUrl,
         profileComplete: true,
+        userType: 'worker', // ✅ Ensure worker role is set
       });
 
       // Success message

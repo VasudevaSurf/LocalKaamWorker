@@ -34,7 +34,9 @@ api.interceptors.request.use(
 export const getProfile = async (phoneNumber: string) => {
   try {
     const encodedPhone = encodeURIComponent(phoneNumber);
-    const response = await api.get(`/profile?phoneNumber=${encodedPhone}`);
+    const response = await api.get(
+      `/profile?phoneNumber=${encodedPhone}&type=worker`,
+    );
     return response.data;
   } catch (error) {
     console.error('API Error (getProfile):', error);
@@ -76,42 +78,81 @@ export const uploadImage = async (imageUri: string, phoneNumber: string) => {
   }
 };
 
-export const uploadVideo = async (
-  videoUri: string,
-  phoneNumber: string,
-  metadata?: {
-    title: string;
-    description: string;
-    category: string;
-    tags: string[];
-  },
-) => {
-  const formData = new FormData();
-  // Append text fields FIRST so backend can read them before the file
-  formData.append('phoneNumber', phoneNumber);
+// ===== Work Video APIs =====
+// ===== Work Video APIs =====
 
-  if (metadata) {
-    formData.append('title', metadata.title);
-    formData.append('description', metadata.description);
-    formData.append('category', metadata.category);
-    formData.append('tags', JSON.stringify(metadata.tags));
-  }
-
-  formData.append('video', {
-    uri: videoUri,
-    type: 'video/mp4',
-    name: 'video.mp4',
-  });
-
+export const createWorkVideo = async (videoData: {
+  userId: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  title: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+}) => {
   try {
-    const response = await api.post('/profile/upload-video', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.post('/work-videos', videoData);
     return response.data;
   } catch (error) {
-    console.error('API Error (uploadVideo):', error);
+    console.error('API Error (createWorkVideo):', error);
+    throw error;
+  }
+};
+
+export const getMyWorkVideos = async (userId: string) => {
+  try {
+    const response = await api.get(`/work-videos/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('API Error (getMyWorkVideos):', error);
+    throw error;
+  }
+};
+
+export const getWorkVideo = async (videoId: string) => {
+  try {
+    const response = await api.get(`/work-videos/${videoId}`);
+    return response.data;
+  } catch (error) {
+    console.error('API Error (getWorkVideo):', error);
+    throw error;
+  }
+};
+
+export const updateWorkVideo = async (
+  videoId: string,
+  updates: {
+    title?: string;
+    description?: string;
+    category?: string;
+    tags?: string[];
+  },
+) => {
+  try {
+    const response = await api.put(`/work-videos/${videoId}`, updates);
+    return response.data;
+  } catch (error) {
+    console.error('API Error (updateWorkVideo):', error);
+    throw error;
+  }
+};
+
+export const deleteWorkVideo = async (videoId: string) => {
+  try {
+    const response = await api.delete(`/work-videos/${videoId}`);
+    return response.data;
+  } catch (error) {
+    console.error('API Error (deleteWorkVideo):', error);
+    throw error;
+  }
+};
+
+export const incrementVideoViews = async (videoId: string) => {
+  try {
+    const response = await api.post(`/work-videos/${videoId}/view`);
+    return response.data;
+  } catch (error) {
+    console.error('API Error (incrementVideoViews):', error);
     throw error;
   }
 };

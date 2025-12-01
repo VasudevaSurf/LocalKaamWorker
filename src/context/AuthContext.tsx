@@ -8,6 +8,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as api from '../services/api';
 import auth from '@react-native-firebase/auth';
+import storage from '@react-native-firebase/storage';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   loginStart,
@@ -26,6 +27,7 @@ import { cache } from '../utils/cache';
 
 interface User {
   id: string;
+  _id?: string; // MongoDB ID
   name: string;
   phoneNumber: string; // Changed from phone to phoneNumber to match backend
   skill: string;
@@ -111,8 +113,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         );
         const updatedUser = await api.getProfile(user.phoneNumber);
         if (updatedUser) {
-          await cache.set(cacheKey, updatedUser);
-          dispatch(setUser(updatedUser));
+          // Map MongoDB _id to id
+          const mappedUser = {
+            ...updatedUser,
+            id: updatedUser._id || updatedUser.id,
+          };
+          await cache.set(cacheKey, mappedUser);
+          dispatch(setUser(mappedUser));
         }
       }
     } catch (error) {
@@ -157,7 +164,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const cachedUser = await cache.get<User>(cacheKey);
         if (cachedUser) {
           console.log('[AuthContext] Login: User found in cache');
-          dispatch(setUser(cachedUser));
+          // Map MongoDB _id to id for cached user too
+          const mappedUser = {
+            ...cachedUser,
+            id: cachedUser._id || cachedUser.id,
+          };
+          dispatch(setUser(mappedUser));
           dispatch(loginSuccess('mock_token_123'));
           return true;
         }
@@ -165,8 +177,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const existingUser = await api.getProfile(formattedPhone);
         if (existingUser) {
           console.log('User found:', existingUser);
-          await cache.set(cacheKey, existingUser);
-          dispatch(setUser(existingUser));
+          // Map MongoDB _id to id
+          const mappedUser = {
+            ...existingUser,
+            id: existingUser._id || existingUser.id,
+          };
+          await cache.set(cacheKey, mappedUser);
+          dispatch(setUser(mappedUser));
           dispatch(loginSuccess('mock_token_123'));
           return true;
         }
@@ -256,37 +273,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const uploadUserVideo = async (
-    videoUri: string,
-    metadata?: {
-      title: string;
-      description: string;
-      category: string;
-      tags: string[];
-    },
-  ): Promise<string> => {
+  const uploadUserVideo = async (videoUri: string): Promise<string> => {
     try {
       if (!user) throw new Error('User not logged in');
-      const response = await api.uploadVideo(
-        videoUri,
-        user.phoneNumber,
-        metadata,
+
+      // Upload video to Firebase Storage
+      const storage = require('@react-native-firebase/storage').default;
+      const reference = storage().ref(
+        `work_videos/${user.phoneNumber}-${Date.now()}.mp4`,
       );
 
-      if (response.workVideos) {
-        // Update cache
-        const cacheKey = `user_profile_${user.phoneNumber}`;
-        const currentUserData = (await cache.get<User>(cacheKey)) || user;
-        const newUserData = {
-          ...currentUserData,
-          workVideos: response.workVideos,
-        };
-        await cache.set(cacheKey, newUserData);
+      await reference.putFile(videoUri);
+      const videoUrl = await reference.getDownloadURL();
 
-        dispatch(updateUserSuccess({ workVideos: response.workVideos }));
-      }
-
-      return response.videoUrl;
+      return videoUrl;
     } catch (error) {
       console.error('Upload video error:', error);
       throw error;

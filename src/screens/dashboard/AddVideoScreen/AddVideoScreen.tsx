@@ -32,7 +32,7 @@ const VIDEO_CATEGORIES = [
 
 const AddVideoScreen = () => {
   const navigation = useNavigation();
-  const { uploadUserVideo } = useAuth();
+  const { uploadUserVideo, user } = useAuth();
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
@@ -134,11 +134,24 @@ const AddVideoScreen = () => {
       return;
     }
 
+    if (!user?.id) {
+      Alert.alert('Error', 'User not logged in');
+      return;
+    }
+
     setIsUploading(true);
 
     try {
       if (videoUri) {
-        await uploadUserVideo(videoUri, {
+        // 1. Upload video to Firebase Storage
+        const videoUrl = await uploadUserVideo(videoUri);
+
+        // 2. Create work video document in database
+        const { createWorkVideo } = await import('../../../services/api');
+        await createWorkVideo({
+          userId: user.id,
+          videoUrl,
+          thumbnailUrl: thumbnailUri || '',
           title,
           description,
           category: selectedCategory,

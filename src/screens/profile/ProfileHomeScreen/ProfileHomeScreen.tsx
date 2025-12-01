@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,34 @@ import { COLORS } from '../../../utils';
 const ProfileHomeScreen = () => {
   const navigation = useNavigation();
   const { user, logout } = useAuth(); // Get user from context
+  const [videos, setVideos] = useState<any[]>([]);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+
+  // Fetch videos from API
+  useEffect(() => {
+    const fetchVideos = async () => {
+      console.log('[ProfileHomeScreen] User ID:', user?.id);
+      if (!user?.id) {
+        console.log('[ProfileHomeScreen] No user ID, skipping video fetch');
+        setIsLoadingVideos(false);
+        return;
+      }
+
+      try {
+        console.log('[ProfileHomeScreen] Fetching videos for user:', user.id);
+        const { getMyWorkVideos } = await import('../../../services/api');
+        const fetchedVideos = await getMyWorkVideos(user.id);
+        console.log('[ProfileHomeScreen] Fetched videos:', fetchedVideos);
+        setVideos(fetchedVideos);
+      } catch (error) {
+        console.error('[ProfileHomeScreen] Error fetching videos:', error);
+      } finally {
+        setIsLoadingVideos(false);
+      }
+    };
+
+    fetchVideos();
+  }, [user?.id]);
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfile' as never);
@@ -197,9 +225,12 @@ const ProfileHomeScreen = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
-                My Videos ({user.workVideos?.length || 0})
+                My Videos ({videos.length})
               </Text>
-              <TouchableOpacity activeOpacity={0.7}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('MyVideos' as never)}
+              >
                 <Text style={styles.seeAllText}>See All</Text>
               </TouchableOpacity>
             </View>
@@ -209,9 +240,9 @@ const ProfileHomeScreen = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.videosScroll}
             >
-              {user.workVideos?.map((video, index) => (
+              {videos.slice(0, 5).map((video, index) => (
                 <TouchableOpacity
-                  key={index}
+                  key={video._id || index}
                   style={styles.videoCard}
                   onPress={() =>
                     navigation.navigate('VideoDetail', { video } as never)
@@ -241,12 +272,10 @@ const ProfileHomeScreen = () => {
                       {video.title}
                     </Text>
                     <View style={styles.videoMeta}>
-                      <Icon
-                        name="clock-outline"
-                        size={12}
-                        color={COLORS.white}
-                      />
-                      <Text style={styles.videoViews}>05:30</Text>
+                      <Icon name="eye" size={12} color={COLORS.white} />
+                      <Text style={styles.videoViews}>
+                        {video.views || 0} views
+                      </Text>
                     </View>
                   </View>
                 </TouchableOpacity>
