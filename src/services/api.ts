@@ -3,7 +3,7 @@ import auth from '@react-native-firebase/auth';
 
 // Use 10.0.2.2 for Android Emulator
 // For physical device, use your machine's IP address
-const BASE_URL = 'http://192.168.29.157:5000/api';
+const BASE_URL = 'https://localkaamserver.onrender.com/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -100,7 +100,7 @@ export const uploadWorkVideo = async (videoData: {
 
 export const getWorkerVideos = async (workerId: string) => {
   try {
-    const response = await api.get(`/work-videos/worker/${workerId}`);
+    const response = await api.get(`/work-videos/user/${workerId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching worker videos:', error);
@@ -142,6 +142,28 @@ export const getPendingRequests = async (
     return response.data;
   } catch (error) {
     console.error('Error fetching pending requests:', error);
+    throw error;
+  }
+};
+
+export const getWorkerActiveRequests = async (workerId: string) => {
+  try {
+    const response = await api.get(
+      `/service-requests/worker/active/${workerId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching worker active requests:', error);
+    throw error;
+  }
+};
+
+export const getServiceRequestById = async (requestId: string) => {
+  try {
+    const response = await api.get(`/service-requests/${requestId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching service request:', error);
     throw error;
   }
 };

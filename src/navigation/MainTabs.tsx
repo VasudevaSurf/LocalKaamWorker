@@ -4,7 +4,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { MainTabParamList } from './types';
+import { useEffect } from 'react';
+import { Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
+import SocketService from '../services/SocketService';
 import { COLORS, FONTS, getFigmaDimension } from '../utils';
+import * as api from '../services/api';
 
 // Import tab screens
 import DashboardStack from './DashboardStack';
@@ -48,6 +54,68 @@ const getTabBarVisibility = (route: any) => {
 };
 
 const MainTabs = () => {
+  const { user } = useAuth();
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (user?.id) {
+      // Connect to socket
+      const socket = SocketService.connect();
+      SocketService.joinWorkerRoom(user.id);
+
+      // Check for active jobs and navigate if found
+      const checkActiveJobs = async () => {
+        try {
+          const active = await api.getWorkerActiveRequests(user.id);
+          if (active && active.length > 0) {
+            // Navigate to the first active job
+            // We use a small timeout to ensure navigation is ready
+            setTimeout(() => {
+              navigation.navigate('MainApp', {
+                screen: 'Jobs',
+                params: {
+                  screen: 'JobDetails',
+                  params: { jobId: active[0]._id },
+                },
+              } as never);
+            }, 500);
+          }
+        } catch (error) {
+          console.error('[MainTabs] Error checking active jobs:', error);
+        }
+      };
+
+      checkActiveJobs();
+
+      // Listen for new requests
+      SocketService.onNewRequest(data => {
+        console.log('[MainTabs] New request received:', data);
+        Alert.alert(
+          'New Job Alert! 🔔',
+          `New ${data.serviceType} job in ${
+            data.location?.city || 'your area'
+          }`,
+          [
+            { text: 'Dismiss', style: 'cancel' },
+            {
+              text: 'View',
+              onPress: () => {
+                // Navigate to Jobs tab
+                navigation.navigate('MainApp', {
+                  screen: 'Jobs',
+                } as never);
+              },
+            },
+          ],
+        );
+      });
+
+      return () => {
+        SocketService.offNewRequest();
+      };
+    }
+  }, [user]);
+
   return (
     <Tab.Navigator
       screenOptions={{

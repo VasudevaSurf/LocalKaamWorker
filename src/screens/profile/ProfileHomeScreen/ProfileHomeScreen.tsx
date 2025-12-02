@@ -15,6 +15,7 @@ import Video from 'react-native-video';
 import { useAuth } from '../../../context/AuthContext';
 import { styles } from './ProfileHomeScreen.styles';
 import { COLORS } from '../../../utils';
+import * as api from '../../../services/api';
 
 const ProfileHomeScreen = () => {
   const navigation = useNavigation();
@@ -34,8 +35,7 @@ const ProfileHomeScreen = () => {
 
       try {
         console.log('[ProfileHomeScreen] Fetching videos for user:', user.id);
-        const { getMyWorkVideos } = await import('../../../services/api');
-        const fetchedVideos = await getMyWorkVideos(user.id);
+        const fetchedVideos = await api.getWorkerVideos(user.id);
         console.log('[ProfileHomeScreen] Fetched videos:', fetchedVideos);
         setVideos(fetchedVideos);
       } catch (error) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,89 +7,96 @@ import {
   SafeAreaView,
   Image,
   Linking,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './JobDetailsScreen.styles';
 import { COLORS } from '../../../utils';
 import Header from '../../../components/Header/Header';
-
-// Mock job data - in real app, fetch from API using jobId
-const MOCK_JOB = {
-  id: '1',
-  customerName: 'Amit Singh',
-  customerImage: 'https://via.placeholder.com/50',
-  customerRating: 4.5,
-  customerReviews: 12,
-  customerPhone: '+919876543210',
-  title: 'House Wiring Needed',
-  description:
-    'Need complete house wiring for my 2BHK apartment. The work includes:\n\n• All room wiring (bedroom, living room, kitchen)\n• MCB board installation\n• Light points installation\n• Power socket installation\n• Fan points\n• Quality materials required\n\nI need someone experienced who can complete the work professionally.',
-  budget: '₹800-1000',
-  budgetType: 'per day',
-  duration: '3-4 days',
-  startDate: 'ASAP',
-  location: 'H-123, Model Town, Ludhiana, Punjab',
-  distance: '3.5 km',
-  timeAgo: '5 mins ago',
-  images: [
-    'https://via.placeholder.com/300x200',
-    'https://via.placeholder.com/300x200',
-  ],
-  requirements: [
-    'Experienced electrician',
-    'Own tools required',
-    'Quality work essential',
-    'Complete in time',
-  ],
-  status: 'new',
-  viewersCount: 3,
-};
+import * as api from '../../../services/api';
 
 const JobDetailsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { jobId } = route.params as { jobId: string };
+  const [job, setJob] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    fetchJobDetails();
+  }, [jobId]);
+
+  const fetchJobDetails = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getServiceRequestById(jobId);
+      setJob(data);
+    } catch (error) {
+      console.error('Error fetching job details:', error);
+      Alert.alert('Error', 'Failed to load job details');
+      navigation.goBack();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBack = () => {
     navigation.goBack();
   };
 
   const handleCall = () => {
-    Linking.openURL(`tel:${MOCK_JOB.customerPhone}`);
+    if (job?.customerPhone) {
+      Linking.openURL(`tel:${job.customerPhone}`);
+    }
   };
 
   const handleWhatsApp = () => {
-    const phone = MOCK_JOB.customerPhone.replace('+', '');
-    const message = `Hi ${MOCK_JOB.customerName}, I'm interested in your job: ${MOCK_JOB.title}`;
-    Linking.openURL(
-      `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`,
-    );
+    if (job?.customerPhone) {
+      const phone = job.customerPhone.replace('+', '');
+      const message = `Hi ${job.customerName}, I'm interested in your job: ${job.serviceType}`;
+      Linking.openURL(
+        `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`,
+      );
+    }
   };
 
   const handleSendResponse = () => {
-    navigation.navigate(
-      'SendResponse' as never,
-      { jobId: MOCK_JOB.id } as never,
-    );
+    // Navigate back to jobs list and open quote modal
+    // Or implement direct quote submission here
+    navigation.goBack();
   };
 
   const handleNotInterested = () => {
-    // TODO: Mark as not interested
     navigation.goBack();
   };
 
   const handleViewLocation = () => {
-    // TODO: Open maps
-    const encodedAddress = encodeURIComponent(MOCK_JOB.location);
-    Linking.openURL(
-      `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
-    );
+    if (job?.location?.address) {
+      const encodedAddress = encodeURIComponent(job.location.address);
+      Linking.openURL(
+        `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
+      );
+    }
   };
 
   const handleSaveJob = () => {
     setIsSaved(!isSaved);
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { justifyContent: 'center' }]}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!job) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -123,18 +130,23 @@ const JobDetailsScreen = () => {
           {/* Customer Section */}
           <View style={styles.customerCard}>
             <View style={styles.customerHeader}>
-              <Image
-                source={{ uri: MOCK_JOB.customerImage }}
-                style={styles.customerImage}
-              />
+              <View
+                style={[
+                  styles.customerImage,
+                  {
+                    backgroundColor: COLORS.gray100,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+              >
+                <Icon name="account" size={30} color={COLORS.gray400} />
+              </View>
               <View style={styles.customerInfo}>
-                <Text style={styles.customerName}>{MOCK_JOB.customerName}</Text>
+                <Text style={styles.customerName}>{job.customerName}</Text>
                 <View style={styles.customerRatingContainer}>
                   <Icon name="star" size={16} color="#F59E0B" />
-                  <Text style={styles.customerRating}>
-                    {MOCK_JOB.customerRating} ({MOCK_JOB.customerReviews}{' '}
-                    reviews)
-                  </Text>
+                  <Text style={styles.customerRating}>New Customer</Text>
                 </View>
               </View>
               <View style={styles.verifiedBadge}>
@@ -166,7 +178,7 @@ const JobDetailsScreen = () => {
 
           {/* Job Title & Description */}
           <View style={styles.jobCard}>
-            <Text style={styles.jobTitle}>{MOCK_JOB.title}</Text>
+            <Text style={styles.jobTitle}>{job.serviceType}</Text>
 
             {/* Time & Viewers */}
             <View style={styles.jobMetaRow}>
@@ -176,7 +188,9 @@ const JobDetailsScreen = () => {
                   size={16}
                   color={COLORS.textSecondary}
                 />
-                <Text style={styles.metaText}>{MOCK_JOB.timeAgo}</Text>
+                <Text style={styles.metaText}>
+                  {new Date(job.createdAt).toLocaleDateString()}
+                </Text>
               </View>
               <View style={styles.metaItem}>
                 <Icon
@@ -184,36 +198,14 @@ const JobDetailsScreen = () => {
                   size={16}
                   color={COLORS.textSecondary}
                 />
-                <Text style={styles.metaText}>
-                  {MOCK_JOB.viewersCount} workers viewing
-                </Text>
+                <Text style={styles.metaText}>Active</Text>
               </View>
             </View>
 
             <View style={styles.divider} />
 
-            <Text style={styles.jobDescription}>{MOCK_JOB.description}</Text>
+            <Text style={styles.jobDescription}>{job.description}</Text>
           </View>
-
-          {/* Images */}
-          {MOCK_JOB.images.length > 0 && (
-            <View style={styles.imagesCard}>
-              <Text style={styles.sectionTitle}>Job Photos</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.imagesScroll}
-              >
-                {MOCK_JOB.images.map((image, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: image }}
-                    style={styles.jobImage}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          )}
 
           {/* Job Details Grid */}
           <View style={styles.detailsCard}>
@@ -225,8 +217,8 @@ const JobDetailsScreen = () => {
                   <Icon name="cash" size={24} color={COLORS.success} />
                 </View>
                 <Text style={styles.detailLabel}>Budget</Text>
-                <Text style={styles.detailValue}>{MOCK_JOB.budget}</Text>
-                <Text style={styles.detailSubValue}>{MOCK_JOB.budgetType}</Text>
+                <Text style={styles.detailValue}>₹{job.budget}</Text>
+                <Text style={styles.detailSubValue}>Fixed</Text>
               </View>
 
               <View style={styles.detailItem}>
@@ -237,31 +229,20 @@ const JobDetailsScreen = () => {
                     color={COLORS.primary}
                   />
                 </View>
-                <Text style={styles.detailLabel}>Duration</Text>
-                <Text style={styles.detailValue}>{MOCK_JOB.duration}</Text>
-                <Text style={styles.detailSubValue}>estimated</Text>
-              </View>
-
-              <View style={styles.detailItem}>
-                <View style={styles.detailIconContainer}>
-                  <Icon
-                    name="calendar-start"
-                    size={24}
-                    color={COLORS.warning}
-                  />
-                </View>
-                <Text style={styles.detailLabel}>Start Date</Text>
-                <Text style={styles.detailValue}>{MOCK_JOB.startDate}</Text>
-                <Text style={styles.detailSubValue}>flexible</Text>
+                <Text style={styles.detailLabel}>Urgency</Text>
+                <Text style={styles.detailValue}>{job.urgency}</Text>
+                <Text style={styles.detailSubValue}>Priority</Text>
               </View>
 
               <View style={styles.detailItem}>
                 <View style={styles.detailIconContainer}>
                   <Icon name="map-marker" size={24} color={COLORS.error} />
                 </View>
-                <Text style={styles.detailLabel}>Distance</Text>
-                <Text style={styles.detailValue}>{MOCK_JOB.distance}</Text>
-                <Text style={styles.detailSubValue}>from you</Text>
+                <Text style={styles.detailLabel}>Location</Text>
+                <Text style={styles.detailValue} numberOfLines={1}>
+                  {job.location?.city || 'Unknown'}
+                </Text>
+                <Text style={styles.detailSubValue}>City</Text>
               </View>
             </View>
           </View>
@@ -271,7 +252,7 @@ const JobDetailsScreen = () => {
             <Text style={styles.sectionTitle}>Location</Text>
             <View style={styles.locationContent}>
               <Icon name="map-marker" size={20} color={COLORS.error} />
-              <Text style={styles.locationText}>{MOCK_JOB.location}</Text>
+              <Text style={styles.locationText}>{job.location?.address}</Text>
             </View>
             <TouchableOpacity
               style={styles.viewMapButton}
@@ -281,17 +262,6 @@ const JobDetailsScreen = () => {
               <Icon name="map-outline" size={18} color={COLORS.primary} />
               <Text style={styles.viewMapText}>View on Map</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* Requirements */}
-          <View style={styles.requirementsCard}>
-            <Text style={styles.sectionTitle}>Requirements</Text>
-            {MOCK_JOB.requirements.map((req, index) => (
-              <View key={index} style={styles.requirementItem}>
-                <Icon name="check-circle" size={18} color={COLORS.success} />
-                <Text style={styles.requirementText}>{req}</Text>
-              </View>
-            ))}
           </View>
 
           {/* Warning Box */}
@@ -315,7 +285,7 @@ const JobDetailsScreen = () => {
             activeOpacity={0.7}
           >
             <Icon name="close" size={20} color={COLORS.error} />
-            <Text style={styles.notInterestedText}>Not Interested</Text>
+            <Text style={styles.notInterestedText}>Back</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -323,7 +293,7 @@ const JobDetailsScreen = () => {
             onPress={handleSendResponse}
             activeOpacity={0.8}
           >
-            <Text style={styles.sendResponseText}>Send Response</Text>
+            <Text style={styles.sendResponseText}>Respond</Text>
             <Icon name="send" size={20} color={COLORS.white} />
           </TouchableOpacity>
         </View>

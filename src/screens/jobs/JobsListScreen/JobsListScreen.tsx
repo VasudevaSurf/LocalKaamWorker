@@ -5,12 +5,12 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   TextInput,
   Modal,
   Alert,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../../../components/Header/Header';
@@ -18,6 +18,7 @@ import { styles } from './JobsListScreen.styles';
 import { COLORS } from '../../../utils';
 import * as api from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
+import SocketService from '../../../services/SocketService';
 
 interface ServiceRequest {
   _id: string;
@@ -49,6 +50,7 @@ const JobsListScreen = () => {
   const [selectedTab, setSelectedTab] = useState<
     'new' | 'active' | 'completed'
   >('new');
+  const [activeRequests, setActiveRequests] = useState<ServiceRequest[]>([]);
   const [pendingRequests, setPendingRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,10 +65,62 @@ const JobsListScreen = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    checkInitialTab();
+  }, []);
+
+  useEffect(() => {
     if (selectedTab === 'new') {
       fetchPendingRequests();
+    } else if (selectedTab === 'active') {
+      fetchActiveRequests();
     }
   }, [selectedTab]);
+
+  const checkInitialTab = async () => {
+    if (!user?.id) return;
+    try {
+      const active = await api.getWorkerActiveRequests(user.id);
+      if (active && active.length > 0) {
+        setSelectedTab('active');
+        setActiveRequests(active);
+      } else {
+        fetchPendingRequests();
+      }
+    } catch (error) {
+      console.error('Error checking initial tab:', error);
+      fetchPendingRequests();
+    }
+  };
+
+  useEffect(() => {
+    // Listen for new requests
+    SocketService.onNewRequest(data => {
+      console.log('[Jobs] New request received:', data);
+      if (selectedTab === 'new') {
+        fetchPendingRequests();
+      }
+    });
+
+    // Listen for accepted requests
+    SocketService.onRequestAccepted(data => {
+      console.log('[Jobs] Request accepted:', data);
+      if (data.workerId === user?.id) {
+        Alert.alert('Congratulations! 🎉', 'Your quote has been accepted!');
+        setSelectedTab('active');
+        fetchActiveRequests();
+      } else {
+        // Refresh list if another worker was accepted
+        if (selectedTab === 'new') {
+          fetchPendingRequests();
+        }
+      }
+    });
+
+    return () => {
+      SocketService.offNewRequest();
+      SocketService.offRequestAccepted();
+    };
+  }, [selectedTab, user]);
 
   const fetchPendingRequests = async () => {
     try {
@@ -87,11 +141,30 @@ const JobsListScreen = () => {
     }
   };
 
+  const fetchActiveRequests = async () => {
+    try {
+      setLoading(true);
+      if (!user?.id) return;
+      const requests = await api.getWorkerActiveRequests(user.id);
+      setActiveRequests(requests || []);
+    } catch (error) {
+      console.error('[Jobs] Error fetching active requests:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchPendingRequests();
+    if (selectedTab === 'new') {
+      await fetchPendingRequests();
+    } else if (selectedTab === 'active') {
+      await fetchActiveRequests();
+    }
     setRefreshing(false);
   };
+
+  // ... (socket listeners remain same) ...
 
   const handleQuotePress = (request: ServiceRequest) => {
     setSelectedRequest(request);
@@ -445,7 +518,76 @@ const JobsListScreen = () => {
     </Modal>
   );
 
-  const newJobsCount = pendingRequests.length;
+  const renderActiveJobCard = (request: ServiceRequest) => (
+    <View
+      key={request._id}
+      style={[
+        styles.jobCard,
+        { borderLeftColor: COLORS.success, borderLeftWidth: 4 },
+      ]}
+    >
+      <View style={[styles.newBadge, { backgroundColor: COLORS.success }]}>
+        <Text style={styles.newBadgeText}>ACTIVE</Text>
+      </View>
+
+      <View style={styles.customerSection}>
+        <View style={styles.customerIconPlaceholder}>
+          {/* @ts-ignore */}
+          <Icon name="account" size={24} color={COLORS.primary} />
+        </View>
+        <View style={styles.customerInfo}>
+          <Text style={styles.customerName}>{request.customerName}</Text>
+          <Text style={styles.customerPhone}>{request.customerPhone}</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.callButton, { paddingHorizontal: 12, height: 36 }]}
+          onPress={() =>
+            Alert.alert('Call', `Calling ${request.customerName}...`)
+          }
+        >
+          <Icon name="phone" size={18} color={COLORS.success} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.jobDetails}>
+        <Text style={styles.jobTitle}>{request.serviceType}</Text>
+        <Text style={styles.jobDescription} numberOfLines={2}>
+          {request.description}
+        </Text>
+      </View>
+
+      <View style={styles.jobMeta}>
+        <View style={styles.metaItem}>
+          <Icon name="cash" size={18} color={COLORS.success} />
+          <Text style={styles.metaText}>
+            ₹{request.budget.toLocaleString()} (Agreed)
+          </Text>
+        </View>
+        <View style={styles.metaItem}>
+          <Icon name="map-marker" size={18} color={COLORS.error} />
+          <Text style={styles.metaText}>{request.location.address}</Text>
+        </View>
+      </View>
+
+      <View style={styles.jobActions}>
+        <TouchableOpacity
+          style={[
+            styles.respondButton,
+            { backgroundColor: COLORS.primary, flex: 1 },
+          ]}
+          onPress={() =>
+            navigation.navigate(
+              'JobDetails' as never,
+              { jobId: request._id } as never,
+            )
+          }
+        >
+          <Text style={styles.respondButtonText}>View Details</Text>
+          <Icon name="arrow-right" size={18} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -454,6 +596,7 @@ const JobsListScreen = () => {
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
+          {/* ... (Tabs remain same) ... */}
           <TouchableOpacity
             style={[styles.tab, selectedTab === 'new' && styles.activeTab]}
             onPress={() => setSelectedTab('new')}
@@ -467,9 +610,11 @@ const JobsListScreen = () => {
             >
               New Enquiries
             </Text>
-            {newJobsCount > 0 && (
+            {pendingRequests.length > 0 && (
               <View style={styles.tabBadge}>
-                <Text style={styles.tabBadgeText}>{newJobsCount}</Text>
+                <Text style={styles.tabBadgeText}>
+                  {pendingRequests.length}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -487,6 +632,13 @@ const JobsListScreen = () => {
             >
               Active
             </Text>
+            {activeRequests.length > 0 && (
+              <View
+                style={[styles.tabBadge, { backgroundColor: COLORS.success }]}
+              >
+                <Text style={styles.tabBadgeText}>{activeRequests.length}</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -516,53 +668,73 @@ const JobsListScreen = () => {
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
         >
-          {selectedTab === 'new' && (
-            <>
-              {loading ? (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>Loading requests...</Text>
-                </View>
-              ) : pendingRequests.length > 0 ? (
-                pendingRequests.map(renderNewEnquiryCard)
-              ) : (
-                <View style={styles.emptyState}>
-                  <Icon
-                    name="briefcase-outline"
-                    size={80}
-                    color={COLORS.gray300}
-                  />
-                  <Text style={styles.emptyStateTitle}>No New Enquiries</Text>
-                  <Text style={styles.emptyStateText}>
-                    New service requests will appear here
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
+          <View>
+            {selectedTab === 'new' && (
+              <>
+                {loading ? (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>
+                      Loading requests...
+                    </Text>
+                  </View>
+                ) : pendingRequests.length > 0 ? (
+                  pendingRequests.map(renderNewEnquiryCard)
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Icon
+                      name="briefcase-outline"
+                      size={80}
+                      color={COLORS.gray300}
+                    />
+                    <Text style={styles.emptyStateTitle}>No New Enquiries</Text>
+                    <Text style={styles.emptyStateText}>
+                      New service requests will appear here
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
 
-          {selectedTab === 'active' && (
-            <View style={styles.emptyState}>
-              <Icon name="briefcase-clock" size={80} color={COLORS.gray300} />
-              <Text style={styles.emptyStateTitle}>No Active Jobs</Text>
-              <Text style={styles.emptyStateText}>
-                Your ongoing jobs will appear here
-              </Text>
-            </View>
-          )}
+            {selectedTab === 'active' && (
+              <>
+                {loading ? (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>
+                      Loading active jobs...
+                    </Text>
+                  </View>
+                ) : activeRequests.length > 0 ? (
+                  activeRequests.map(renderActiveJobCard)
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Icon
+                      name="briefcase-clock"
+                      size={80}
+                      color={COLORS.gray300}
+                    />
+                    <Text style={styles.emptyStateTitle}>No Active Jobs</Text>
+                    <Text style={styles.emptyStateText}>
+                      Your ongoing jobs will appear here
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
 
-          {selectedTab === 'completed' && (
-            <View style={styles.emptyState}>
-              <Icon
-                name="check-circle-outline"
-                size={80}
-                color={COLORS.gray300}
-              />
-              <Text style={styles.emptyStateTitle}>No Completed Jobs</Text>
-              <Text style={styles.emptyStateText}>
-                Your completed jobs will appear here
-              </Text>
-            </View>
-          )}
+            {selectedTab === 'completed' && (
+              <View style={styles.emptyState}>
+                <Icon
+                  name="check-circle-outline"
+                  size={80}
+                  color={COLORS.gray300}
+                />
+                <Text style={styles.emptyStateTitle}>No Completed Jobs</Text>
+                <Text style={styles.emptyStateText}>
+                  Your completed jobs will appear here
+                </Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
 
         {renderQuoteModal()}
