@@ -16,6 +16,7 @@ import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { styles } from './AddVideoScreen.styles';
 import { COLORS } from '../../../utils';
+import * as api from '../../../services/api';
 import Header from '../../../components/Header/Header';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -147,15 +148,14 @@ const AddVideoScreen = () => {
         const videoUrl = await uploadUserVideo(videoUri);
 
         // 2. Create work video document in database
-        const { createWorkVideo } = await import('../../../services/api');
-        await createWorkVideo({
-          userId: user.id,
-          videoUrl,
-          thumbnailUrl: thumbnailUri || '',
+        await api.uploadWorkVideo({
+          workerId: user.id,
+          workerName: user.name,
+          serviceType: selectedCategory, // Mapping category ID to service type for now, or use name
           title,
           description,
-          category: selectedCategory,
-          tags,
+          videoUrl,
+          thumbnailUrl: thumbnailUri || '',
         });
 
         Alert.alert(

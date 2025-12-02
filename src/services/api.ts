@@ -90,7 +90,11 @@ export const uploadWorkVideo = async (videoData: {
   duration?: number;
 }) => {
   try {
-    const response = await api.post('/work-videos', videoData);
+    const response = await api.post('/work-videos', {
+      ...videoData,
+      userId: videoData.workerId,
+      category: videoData.serviceType,
+    });
     return response.data;
   } catch (error) {
     console.error('API Error (uploadWorkVideo):', error);
