@@ -54,17 +54,18 @@ export const updateProfile = async (profileData: any) => {
   }
 };
 
-export const uploadImage = async (imageUri: string, phoneNumber: string) => {
+export const uploadImage = async (
+  imageUri: string,
+  folder: string = 'profiles',
+) => {
   try {
     const formData = new FormData();
-    // Append text fields FIRST so backend can read them before the file
-    formData.append('phoneNumber', phoneNumber);
-
     formData.append('image', {
       uri: imageUri,
-      type: 'image/jpeg', // Adjust based on actual image type if needed
+      type: 'image/jpeg',
       name: 'profile.jpg',
-    });
+    } as any);
+    formData.append('folder', folder);
 
     const response = await api.post('/profile/upload-image', formData, {
       headers: {
@@ -78,61 +79,31 @@ export const uploadImage = async (imageUri: string, phoneNumber: string) => {
   }
 };
 
-// ===== Work Video APIs =====
-// ===== Work Video APIs =====
-
-export const createWorkVideo = async (videoData: {
-  userId: string;
+export const uploadWorkVideo = async (videoData: {
+  workerId: string;
+  workerName: string;
+  serviceType: string;
+  title: string;
+  description: string;
   videoUrl: string;
   thumbnailUrl?: string;
-  title: string;
-  description?: string;
-  category?: string;
-  tags?: string[];
+  duration?: number;
 }) => {
   try {
     const response = await api.post('/work-videos', videoData);
     return response.data;
   } catch (error) {
-    console.error('API Error (createWorkVideo):', error);
+    console.error('API Error (uploadWorkVideo):', error);
     throw error;
   }
 };
 
-export const getMyWorkVideos = async (userId: string) => {
+export const getWorkerVideos = async (workerId: string) => {
   try {
-    const response = await api.get(`/work-videos/user/${userId}`);
+    const response = await api.get(`/work-videos/worker/${workerId}`);
     return response.data;
   } catch (error) {
-    console.error('API Error (getMyWorkVideos):', error);
-    throw error;
-  }
-};
-
-export const getWorkVideo = async (videoId: string) => {
-  try {
-    const response = await api.get(`/work-videos/${videoId}`);
-    return response.data;
-  } catch (error) {
-    console.error('API Error (getWorkVideo):', error);
-    throw error;
-  }
-};
-
-export const updateWorkVideo = async (
-  videoId: string,
-  updates: {
-    title?: string;
-    description?: string;
-    category?: string;
-    tags?: string[];
-  },
-) => {
-  try {
-    const response = await api.put(`/work-videos/${videoId}`, updates);
-    return response.data;
-  } catch (error) {
-    console.error('API Error (updateWorkVideo):', error);
+    console.error('Error fetching worker videos:', error);
     throw error;
   }
 };
@@ -153,6 +124,52 @@ export const incrementVideoViews = async (videoId: string) => {
     return response.data;
   } catch (error) {
     console.error('API Error (incrementVideoViews):', error);
+    throw error;
+  }
+};
+
+// Service Request APIs
+export const getPendingRequests = async (
+  serviceType?: string,
+  workerId?: string,
+) => {
+  try {
+    const params: any = {};
+    if (serviceType) params.serviceType = serviceType;
+    if (workerId) params.workerId = workerId;
+
+    const response = await api.get('/service-requests/pending', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching pending requests:', error);
+    throw error;
+  }
+};
+
+// Quote APIs
+export const submitQuote = async (quoteData: {
+  serviceRequestId: string;
+  workerId: string;
+  workerName: string;
+  workerPhone: string;
+  quotedPrice: number;
+  message?: string;
+}) => {
+  try {
+    const response = await api.post('/quotes', quoteData);
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting quote:', error);
+    throw error;
+  }
+};
+
+export const getWorkerQuotes = async (workerId: string) => {
+  try {
+    const response = await api.get(`/quotes/worker/${workerId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching worker quotes:', error);
     throw error;
   }
 };
