@@ -57,35 +57,45 @@ const MainTabs = () => {
   const { user } = useAuth();
   const navigation = useNavigation();
 
+  const hasCheckedActiveJob = React.useRef(false);
+
   useEffect(() => {
     if (user?.id) {
       // Connect to socket
       const socket = SocketService.connect();
       SocketService.joinWorkerRoom(user.id);
 
-      // Check for active jobs and navigate if found
-      const checkActiveJobs = async () => {
-        try {
-          const active = await api.getWorkerActiveRequests(user.id);
-          if (active && active.length > 0) {
-            // Navigate to the first active job
-            // We use a small timeout to ensure navigation is ready
-            setTimeout(() => {
+      // Check for active jobs and navigate if found - RUNS ONLY ONCE
+      if (!hasCheckedActiveJob.current) {
+        const checkActiveJobs = async () => {
+          try {
+            hasCheckedActiveJob.current = true; // Mark as checked immediately
+            const active = await api.getWorkerActiveRequests(user.id);
+            if (active && active.length > 0) {
+              // Navigate to Jobs tab first ensuring List is there
               navigation.navigate('MainApp', {
                 screen: 'Jobs',
-                params: {
-                  screen: 'JobDetails',
-                  params: { jobId: active[0]._id },
-                },
+                params: { screen: 'JobsList' },
               } as never);
-            }, 500);
-          }
-        } catch (error) {
-          console.error('[MainTabs] Error checking active jobs:', error);
-        }
-      };
 
-      checkActiveJobs();
+              // Then push details on top
+              setTimeout(() => {
+                navigation.navigate('MainApp', {
+                  screen: 'Jobs',
+                  params: {
+                    screen: 'JobDetails',
+                    params: { jobId: active[0]._id },
+                  },
+                } as never);
+              }, 100);
+            }
+          } catch (error) {
+            console.error('[MainTabs] Error checking active jobs:', error);
+          }
+        };
+
+        checkActiveJobs();
+      }
 
       // Listen for new requests
       SocketService.onNewRequest(data => {
@@ -114,7 +124,7 @@ const MainTabs = () => {
         SocketService.offNewRequest();
       };
     }
-  }, [user]);
+  }, [user?.id]); // Only re-run if user ID changes (login/logout)
 
   return (
     <Tab.Navigator
