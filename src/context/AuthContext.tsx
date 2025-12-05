@@ -234,15 +234,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...userData,
         phoneNumber: user.phoneNumber,
         firebaseUid: auth().currentUser?.uid || '',
+        userType: 'worker',
       });
 
-      // Update cache with new data
-      const cacheKey = `user_profile_${user.phoneNumber}`;
-      const currentUserData = (await cache.get<User>(cacheKey)) || user;
-      const newUserData = { ...currentUserData, ...userData };
-      await cache.set(cacheKey, newUserData);
+      const mappedUser = {
+        ...updatedProfile,
+        id: updatedProfile._id || updatedProfile.id,
+      };
 
-      dispatch(updateUserSuccess(userData));
+      // Update cache with new data from backend
+      const cacheKey = `user_profile_${user.phoneNumber}`;
+      await cache.set(cacheKey, mappedUser);
+
+      dispatch(updateUserSuccess(mappedUser));
     } catch (error) {
       console.error('Update user error:', error);
       dispatch(updateUserFailure('Update failed'));

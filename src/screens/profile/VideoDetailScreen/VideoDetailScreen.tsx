@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -20,6 +21,7 @@ const VideoDetailScreen = () => {
   const route = useRoute();
   const { video } = route.params as { video: any };
   const [paused, setPaused] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -38,9 +40,15 @@ const VideoDetailScreen = () => {
             controls={true}
             resizeMode="contain"
             paused={paused}
-            poster={video.thumbnailUrl}
-            posterResizeMode="cover"
+            onLoadStart={() => setIsLoading(true)}
+            onLoad={() => setIsLoading(false)}
+            onBuffer={({ isBuffering }) => setIsLoading(isBuffering)}
           />
+          {isLoading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          )}
         </View>
 
         <View style={styles.contentContainer}>
@@ -106,6 +114,15 @@ const styles = StyleSheet.create({
     width: width,
     height: width * 0.5625, // 16:9 aspect ratio
     backgroundColor: COLORS.black,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 1,
   },
   videoPlayer: {
     width: '100%',

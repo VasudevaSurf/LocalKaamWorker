@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Video from 'react-native-video';
 import { useAuth } from '../../../context/AuthContext';
+import * as api from '../../../services/api';
 import { COLORS } from '../../../utils';
 import Header from '../../../components/Header/Header';
 import { styles } from './MyVideosScreen.styles';
@@ -40,8 +41,8 @@ const MyVideosScreen = () => {
 
     try {
       console.log('[MyVideosScreen] Fetching videos for user:', user.id);
-      const { getMyWorkVideos } = await import('../../../services/api');
-      const fetchedVideos = await getMyWorkVideos(user.id);
+      console.log('[MyVideosScreen] Fetching videos for user:', user.id);
+      const fetchedVideos = await api.getWorkerVideos(user.id);
       console.log('[MyVideosScreen] Fetched videos:', fetchedVideos);
       setVideos(fetchedVideos);
       setDisplayedVideos(fetchedVideos.slice(0, ITEMS_PER_PAGE));

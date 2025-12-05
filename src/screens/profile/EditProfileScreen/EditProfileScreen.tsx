@@ -45,14 +45,29 @@ const EditProfileScreen = () => {
   );
 
   // Parse initial experience
-  const initialExpLabel =
-    user?.experience?.label ||
-    (typeof user?.experience === 'string' ? user.experience : '') ||
-    '';
-  const initialYears = initialExpLabel.match(/(\d+)/)?.[0] || '';
+  let initialYears = '';
+  let initialMonths = '';
+
+  if (user?.experience) {
+    if (typeof user.experience === 'object' && user.experience.value) {
+      const parts = user.experience.value.split('.');
+      initialYears = parts[0];
+      initialMonths = parts[1] || '';
+    } else {
+      const label =
+        typeof user.experience === 'string'
+          ? user.experience
+          : user.experience?.label || '';
+      const matches = label.match(/(\d+)/g);
+      if (matches) {
+        initialYears = matches[0] || '';
+        initialMonths = matches[1] || '';
+      }
+    }
+  }
 
   const [expYears, setExpYears] = useState(initialYears);
-  const [expMonths, setExpMonths] = useState('');
+  const [expMonths, setExpMonths] = useState(initialMonths);
 
   const [city, setCity] = useState(user?.city?.name || '');
   const [state, setState] = useState(user?.city?.state || '');
