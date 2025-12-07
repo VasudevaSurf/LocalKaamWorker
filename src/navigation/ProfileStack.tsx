@@ -10,6 +10,7 @@ import SettingsScreen from '../screens/profile/SettingsScreen';
 import HelpScreen from '../screens/profile/HelpScreen';
 import MyVideosScreen from '../screens/profile/MyVideosScreen/MyVideosScreen';
 import VideoDetailScreen from '../screens/profile/VideoDetailScreen/VideoDetailScreen';
+import ReviewsScreen from '../screens/profile/ReviewsScreen/ReviewsScreen';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -27,6 +28,7 @@ const ProfileStack = () => {
       <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="MyVideos" component={MyVideosScreen} />
       <Stack.Screen name="VideoDetail" component={VideoDetailScreen} />
+      <Stack.Screen name="Reviews" component={ReviewsScreen} />
     </Stack.Navigator>
   );
 };

@@ -31,6 +31,50 @@ api.interceptors.request.use(
   },
 );
 
+// Add a response interceptor for global retries
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    const config = error.config;
+
+    // If we have no config, or it's not a network/ 5xx error, reject
+    if (
+      !config ||
+      (!error.message.includes('Network Error') &&
+        !error.message.includes('timeout') &&
+        error.response?.status !== 503)
+    ) {
+      return Promise.reject(error);
+    }
+
+    // Set retry count
+    config.retryCount = config.retryCount || 0;
+
+    // Check if we've maxed out retries
+    if (config.retryCount >= 3) {
+      return Promise.reject(error);
+    }
+
+    // Increase retry count
+    config.retryCount += 1;
+
+    // Create a new promise to handle the backoff
+    const backoff = new Promise(resolve => {
+      setTimeout(() => {
+        resolve(null);
+      }, 1000 * config.retryCount); // 1s, 2s, 3s wait
+    });
+
+    console.log(
+      `[API] Retrying request ${config.url} (Attempt ${config.retryCount})...`,
+    );
+
+    // Wait for backoff, then retry
+    await backoff;
+    return api(config);
+  },
+);
+
 export const getProfile = async (phoneNumber: string) => {
   try {
     const encodedPhone = encodeURIComponent(phoneNumber);
@@ -50,6 +94,16 @@ export const updateProfile = async (profileData: any) => {
     return response.data;
   } catch (error) {
     console.error('API Error (updateProfile):', error);
+    throw error;
+  }
+};
+
+export const getWorkerProfile = async (userId: string) => {
+  try {
+    const response = await api.get(`/profile/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching worker profile:', error);
     throw error;
   }
 };
@@ -196,6 +250,66 @@ export const getWorkerQuotes = async (workerId: string) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching worker quotes:', error);
+    throw error;
+  }
+};
+
+// Complete Job API
+export const completeJob = async (
+  requestId: string,
+  otp: string,
+  completionVideo: string,
+  workerId: string,
+) => {
+  try {
+    const response = await api.post(`/service-requests/${requestId}/complete`, {
+      otp,
+      completionVideo,
+      workerId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error completing job:', error);
+    throw error;
+  }
+};
+
+// Cancel/Forfeit Job API
+export const cancelJob = async (requestId: string, workerId: string) => {
+  try {
+    const response = await api.post(
+      `/service-requests/${requestId}/cancel-job`,
+      {
+        workerId,
+      },
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error cancelling job:', error);
+    throw error;
+  }
+};
+
+// Earnings Report
+export const getWorkerStats = async (workerId: string) => {
+  try {
+    const response = await api.get(
+      `/service-requests/worker-stats/${workerId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching worker stats:', error);
+    throw error;
+  }
+};
+
+// Reviews
+export const getWorkerReviews = async (workerId: string) => {
+  try {
+    const response = await api.get(`/profile/reviews/${workerId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching worker reviews:', error);
     throw error;
   }
 };

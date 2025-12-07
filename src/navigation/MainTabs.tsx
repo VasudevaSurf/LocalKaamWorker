@@ -67,9 +67,9 @@ const MainTabs = () => {
 
       // Check for active jobs and navigate if found - RUNS ONLY ONCE
       if (!hasCheckedActiveJob.current) {
-        const checkActiveJobs = async () => {
+        const checkActiveJobs = async (retryCount = 0) => {
           try {
-            hasCheckedActiveJob.current = true; // Mark as checked immediately
+            hasCheckedActiveJob.current = true; // Mark checked to prevent double-runs
             const active = await api.getWorkerActiveRequests(user.id);
             if (active && active.length > 0) {
               // Navigate to Jobs tab first ensuring List is there
@@ -90,11 +90,29 @@ const MainTabs = () => {
               }, 100);
             }
           } catch (error) {
-            console.error('[MainTabs] Error checking active jobs:', error);
+            console.error(
+              `[MainTabs] Error checking active jobs (Attempt ${
+                retryCount + 1
+              }):`,
+              error,
+            );
+            // Retry logic for network failures on launch
+            if (retryCount < 3) {
+              const timeout = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+              console.log(`[MainTabs] Retrying in ${timeout}ms...`);
+              hasCheckedActiveJob.current = false; // Allow retry
+              setTimeout(() => {
+                if (!hasCheckedActiveJob.current) {
+                  // Double check
+                  checkActiveJobs(retryCount + 1);
+                }
+              }, timeout);
+            }
           }
         };
 
-        checkActiveJobs();
+        // Small initial delay to allow network/socket to stabilize
+        setTimeout(() => checkActiveJobs(), 1000);
       }
 
       // Listen for new requests

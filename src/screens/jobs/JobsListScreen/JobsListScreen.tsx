@@ -292,7 +292,8 @@ const JobsListScreen = () => {
         <View style={styles.jobActions}>
           {request.myQuote ? (
             <View style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
-              {request.myQuote.quotedPrice === request.budget ? (
+              {request.myQuote.quotedPrice === request.budget &&
+              request.myQuote.status === 'accepted' ? (
                 <View
                   style={[
                     styles.callButton,

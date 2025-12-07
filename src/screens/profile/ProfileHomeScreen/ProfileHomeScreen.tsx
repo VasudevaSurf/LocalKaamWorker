@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +9,6 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Video from 'react-native-video';
@@ -19,9 +19,18 @@ import * as api from '../../../services/api';
 
 const ProfileHomeScreen = () => {
   const navigation = useNavigation();
-  const { user, logout } = useAuth(); // Get user from context
+  const { user, logout, refreshUserProfile } = useAuth(); // Get user from context
   const [videos, setVideos] = useState<any[]>([]);
   const [isLoadingVideos, setIsLoadingVideos] = useState(true);
+
+  // Refresh profile data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.phoneNumber) {
+        refreshUserProfile(true); // Force refresh from server
+      }
+    }, []), // Dependencies empty to run on focus
+  );
 
   // Fetch videos from API
   useEffect(() => {
@@ -134,19 +143,21 @@ const ProfileHomeScreen = () => {
             <View style={styles.profileStats}>
               <View style={styles.statItem}>
                 <Icon name="star" size={20} color="#FCD34D" />
-                <Text style={styles.statValue}>5.0</Text>
+                <Text style={styles.statValue}>
+                  {user.rating ? user.rating.toFixed(1) : '0.0'}
+                </Text>
                 <Text style={styles.statLabel}>Rating</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Icon name="briefcase" size={20} color={COLORS.white} />
-                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statValue}>{user.jobsCount || 0}</Text>
                 <Text style={styles.statLabel}>Jobs Done</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Icon name="account-group" size={20} color={COLORS.white} />
-                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statValue}>{user.ratingCount || 0}</Text>
                 <Text style={styles.statLabel}>Reviews</Text>
               </View>
             </View>
@@ -215,7 +226,7 @@ const ProfileHomeScreen = () => {
                   <Text style={styles.metricLabel}>Average Rating</Text>
                 </View>
                 <Text style={[styles.metricValue, { color: '#F59E0B' }]}>
-                  5.0/5.0
+                  {user.rating ? `${user.rating.toFixed(1)}/5.0` : '0.0/5.0'}
                 </Text>
               </View>
             </View>
@@ -335,7 +346,7 @@ const ProfileHomeScreen = () => {
 
               <TouchableOpacity
                 style={styles.menuItem}
-                onPress={() => Alert.alert('Reviews')}
+                onPress={() => navigation.navigate('Reviews' as never)}
                 activeOpacity={0.7}
               >
                 <View style={styles.menuLeft}>

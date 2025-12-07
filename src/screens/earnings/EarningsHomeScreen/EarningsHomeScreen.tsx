@@ -72,26 +72,195 @@ const MONTHS = [
   'Dec',
 ];
 
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../../context/AuthContext';
+import * as api from '../../../services/api';
+
+const CACHE_KEY_EARNINGS = 'worker_earnings_stats';
+
 const EarningsHomeScreen = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState('Nov');
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [stats, setStats] = useState({
+    totalEarnings: 0,
+    walletBalance: 0,
+    jobsCompleted: 0,
+  });
 
-  const completedTransactions = MOCK_TRANSACTIONS.filter(
+  // Load cache on mount
+  React.useEffect(() => {
+    loadCache();
+  }, []);
+
+  const loadCache = async () => {
+    try {
+      const cached = await AsyncStorage.getItem(CACHE_KEY_EARNINGS);
+      if (cached) {
+        const data = JSON.parse(cached);
+        setStats({
+          totalEarnings: data.totalEarnings || 0,
+          walletBalance: data.walletBalance || 0,
+          jobsCompleted: data.jobsCompleted || 0,
+        });
+        setTransactions(data.transactions || []);
+      }
+    } catch (e) {
+      console.log('Error loading cache', e);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchEarnings();
+    }, []),
+  );
+
+  const fetchEarnings = async () => {
+    if (!user?.id) return;
+    try {
+      setLoading(true);
+      // Fetch full stats from new endpoint
+      const data = await api.getWorkerStats(user.id);
+
+      if (data) {
+        setStats({
+          totalEarnings: data.totalEarnings || 0,
+          walletBalance: data.totalEarnings || 0,
+          jobsCompleted: data.jobsCompleted || 0,
+        });
+        setTransactions(data.transactions || []);
+        // Cache the new data
+        await AsyncStorage.setItem(CACHE_KEY_EARNINGS, JSON.stringify(data));
+      }
+    } catch (error) {
+      console.error('Error fetching earnings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderSkeleton = () => (
+    <View style={{ padding: 16 }}>
+      {/* Main Card Skeleton */}
+      <View
+        style={{
+          height: 200,
+          backgroundColor: '#E1E9EE',
+          borderRadius: 16,
+          marginBottom: 24,
+          padding: 20,
+        }}
+      >
+        <View
+          style={{
+            width: 100,
+            height: 20,
+            backgroundColor: '#CED4DA',
+            marginBottom: 10,
+            borderRadius: 4,
+          }}
+        />
+        <View
+          style={{
+            width: 150,
+            height: 40,
+            backgroundColor: '#CED4DA',
+            marginBottom: 20,
+            borderRadius: 4,
+          }}
+        />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View
+            style={{
+              width: 80,
+              height: 40,
+              backgroundColor: '#CED4DA',
+              borderRadius: 4,
+            }}
+          />
+          <View
+            style={{
+              width: 80,
+              height: 40,
+              backgroundColor: '#CED4DA',
+              borderRadius: 4,
+            }}
+          />
+        </View>
+      </View>
+      {/* Quick Stats Skeleton */}
+      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+        <View
+          style={{
+            flex: 1,
+            height: 80,
+            backgroundColor: '#E1E9EE',
+            borderRadius: 12,
+          }}
+        />
+        <View
+          style={{
+            flex: 1,
+            height: 80,
+            backgroundColor: '#E1E9EE',
+            borderRadius: 12,
+          }}
+        />
+      </View>
+      {/* List Skeleton */}
+      <View
+        style={{
+          height: 20,
+          width: 150,
+          backgroundColor: '#E1E9EE',
+          marginBottom: 10,
+          borderRadius: 4,
+        }}
+      />
+      <View
+        style={{
+          height: 80,
+          backgroundColor: '#F8F9FA',
+          borderRadius: 12,
+          marginBottom: 10,
+        }}
+      />
+      <View
+        style={{
+          height: 80,
+          backgroundColor: '#F8F9FA',
+          borderRadius: 12,
+          marginBottom: 10,
+        }}
+      />
+    </View>
+  );
+
+  if (loading && stats.totalEarnings === 0 && transactions.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <Header variant="simple" title="Earnings" />
+          {renderSkeleton()}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const completedTransactions = transactions.filter(
     t => t.status === 'completed',
   );
-  const pendingTransactions = MOCK_TRANSACTIONS.filter(
-    t => t.status === 'pending',
-  );
+  const pendingTransactions = transactions.filter(t => t.status === 'pending');
 
-  const totalEarnings = completedTransactions.reduce(
-    (sum, t) => sum + t.amount,
-    0,
-  );
-  const pendingAmount = pendingTransactions.reduce(
-    (sum, t) => sum + t.amount,
-    0,
-  );
-  const jobsCompleted = completedTransactions.length;
+  const totalEarnings = stats.totalEarnings;
+  const pendingAmount = transactions
+    .filter(t => t.status === 'pending')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const jobsCompleted = stats.jobsCompleted;
   const averageEarning =
     jobsCompleted > 0 ? Math.round(totalEarnings / jobsCompleted) : 0;
 

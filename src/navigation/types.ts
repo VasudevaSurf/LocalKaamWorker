@@ -36,7 +36,7 @@ export type JobsStackParamList = {
   JobsList: undefined;
   JobDetails: { jobId: string };
   SendResponse: { jobId: string };
-  CompleteJob: { jobId: string };
+  JobCompletion: { requestId: string };
   PaymentConfirmation: { jobId: string; amount: number };
 };
 
@@ -55,6 +55,7 @@ export type ProfileStackParamList = {
   Help: undefined;
   MyVideos: undefined;
   VideoDetail: { video: any }; // Using 'any' for now, should be Video type
+  Reviews: undefined;
 };
 
 // Navigation Props

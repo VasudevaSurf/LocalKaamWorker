@@ -17,10 +17,13 @@ import { COLORS } from '../../../utils';
 import Header from '../../../components/Header/Header';
 import * as api from '../../../services/api';
 
+import { useAuth } from '../../../context/AuthContext';
+
 const JobDetailsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { jobId } = route.params as { jobId: string };
+  const { user } = useAuth();
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
@@ -84,6 +87,35 @@ const JobDetailsScreen = () => {
 
   const handleSaveJob = () => {
     setIsSaved(!isSaved);
+  };
+
+  const handleCancelJob = () => {
+    Alert.alert(
+      'Cancel Job',
+      'Are you sure you want to cancel this job? This may affect your rating.',
+      [
+        { text: 'Keep Job', style: 'cancel' },
+        {
+          text: 'Cancel Job',
+          style: 'destructive',
+          onPress: async () => {
+            if (!user?.id) return;
+            try {
+              setLoading(true);
+              await api.cancelJob(jobId, user.id);
+              Alert.alert(
+                'Job Cancelled',
+                'You have successfully cancelled this job.',
+              );
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to cancel job. Please try again.');
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   if (loading) {
@@ -278,24 +310,79 @@ const JobDetailsScreen = () => {
         </ScrollView>
 
         {/* Bottom Actions */}
+        {/* Bottom Actions */}
         <View style={styles.bottomActions}>
-          <TouchableOpacity
-            style={styles.notInterestedButton}
-            onPress={handleNotInterested}
-            activeOpacity={0.7}
-          >
-            <Icon name="close" size={20} color={COLORS.error} />
-            <Text style={styles.notInterestedText}>Back</Text>
-          </TouchableOpacity>
+          {job.status === 'accepted' ? (
+            <React.Fragment>
+              <TouchableOpacity
+                style={[
+                  styles.notInterestedButton,
+                  { borderColor: COLORS.error, borderWidth: 1 },
+                ]}
+                onPress={handleCancelJob}
+                activeOpacity={0.7}
+              >
+                <Icon name="close-circle" size={20} color={COLORS.error} />
+                <Text
+                  style={[styles.notInterestedText, { color: COLORS.error }]}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.sendResponseButton}
-            onPress={handleSendResponse}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.sendResponseText}>Respond</Text>
-            <Icon name="send" size={20} color={COLORS.white} />
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.sendResponseButton,
+                  { backgroundColor: COLORS.success },
+                ]}
+                onPress={() =>
+                  navigation.navigate('JobCompletion', { requestId: job._id })
+                }
+                activeOpacity={0.8}
+              >
+                <Text style={styles.sendResponseText}>Complete Job</Text>
+                <Icon name="check-circle" size={20} color={COLORS.white} />
+              </TouchableOpacity>
+            </React.Fragment>
+          ) : job.status === 'completed' ? (
+            <View
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: 'bold',
+                  color: COLORS.success,
+                }}
+              >
+                Job Completed
+              </Text>
+            </View>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.notInterestedButton}
+                onPress={handleNotInterested}
+                activeOpacity={0.7}
+              >
+                <Icon name="close" size={20} color={COLORS.error} />
+                <Text style={styles.notInterestedText}>Back</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.sendResponseButton}
+                onPress={handleSendResponse}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.sendResponseText}>Respond</Text>
+                <Icon name="send" size={20} color={COLORS.white} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
     </SafeAreaView>
