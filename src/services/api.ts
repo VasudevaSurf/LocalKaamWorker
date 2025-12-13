@@ -3,7 +3,7 @@ import auth from '@react-native-firebase/auth';
 
 // Use 10.0.2.2 for Android Emulator
 // For physical device, use your machine's IP address
-const BASE_URL = 'https://localkaamserver.onrender.com/api';
+const BASE_URL = 'https://localkaamserver-lpvt.onrender.com/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -311,6 +311,20 @@ export const getWorkerReviews = async (workerId: string) => {
   } catch (error) {
     console.error('Error fetching worker reviews:', error);
     throw error;
+  }
+};
+
+// FCM Token
+export const updateFcmToken = async (userId: string, fcmToken: string) => {
+  try {
+    const response = await api.put('/profile/fcm-token', {
+      userId,
+      fcmToken,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating FCM token:', error);
+    // Don't throw, just log
   }
 };
 

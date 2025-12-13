@@ -11,7 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../../../components/Header/Header';
 import { styles } from './JobsListScreen.styles';
@@ -55,6 +55,9 @@ const JobsListScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const route = useRoute();
+  const [highlightedJobId, setHighlightedJobId] = useState<string | null>(null);
+
   // Quote modal state
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(
@@ -66,7 +69,30 @@ const JobsListScreen = () => {
 
   useEffect(() => {
     checkInitialTab();
+    checkInitialTab();
   }, []);
+
+  // Handle Highlight Params
+  useEffect(() => {
+    // @ts-ignore
+    const { highlightJobId } = route.params || {};
+    if (highlightJobId) {
+      console.log('[Jobs] Highlighting job:', highlightJobId);
+      // Ensure we are on the tab containing the job (usually 'new' for notifications)
+      setSelectedTab('new');
+      setHighlightedJobId(highlightJobId);
+
+      // Clear highlight after 3 seconds
+      const timer = setTimeout(() => {
+        setHighlightedJobId(null);
+        // Clear param so it doesn't re-trigger on simple re-renders?
+        // Note: Param persistence is handled by navigation, we depend on manual clear in state
+        navigation.setParams({ highlightJobId: null } as never);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [route.params]);
 
   useEffect(() => {
     if (selectedTab === 'new') {
@@ -239,8 +265,20 @@ const JobsListScreen = () => {
   };
 
   const renderNewEnquiryCard = (request: ServiceRequest) => {
+    const isHighlighted = request._id === highlightedJobId;
     return (
-      <View key={request._id} style={[styles.jobCard, styles.newJobCard]}>
+      <View
+        key={request._id}
+        style={[
+          styles.jobCard,
+          styles.newJobCard,
+          isHighlighted && {
+            borderColor: COLORS.primary,
+            borderWidth: 2,
+            backgroundColor: COLORS.primary + '10', // Slight tint
+          },
+        ]}
+      >
         <View style={styles.newBadge}>
           <Text style={styles.newBadgeText}>NEW</Text>
         </View>

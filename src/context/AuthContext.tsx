@@ -24,6 +24,7 @@ import {
   clearUser,
 } from '../store/slices/userSlice';
 import { cache } from '../utils/cache';
+import NotificationService from '../services/NotificationService';
 
 interface User {
   id: string;
@@ -91,6 +92,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       refreshUserProfile();
     }
   }, []);
+
+  // Initialize Notification Service when user is logged in
+  useEffect(() => {
+    if (user && user.id && user.id !== 'temp_id') {
+      NotificationService.registerAppWithFCM(user.id);
+      const unsubscribe = NotificationService.setupForegroundHandler();
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [user?.id]);
 
   const refreshUserProfile = async (forceRefresh: boolean = false) => {
     try {

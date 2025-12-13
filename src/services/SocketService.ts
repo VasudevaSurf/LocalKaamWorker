@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client/dist/socket.io';
 
 // Replace with your actual server URL
-const SERVER_URL = 'https://localkaamserver.onrender.com';
+const SERVER_URL = 'https://localkaamserver-lpvt.onrender.com';
 
 class SocketService {
   private socket: Socket | null = null;

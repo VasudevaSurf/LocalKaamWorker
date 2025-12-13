@@ -14,6 +14,7 @@ import ProfileSetup2Screen from '../screens/auth/ProfileSetup2Screen/ProfileSetu
 
 // Main App - FIXED IMPORT
 import MainTabs from './MainTabs';
+import NotificationService from '../services/NotificationService';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,12 +31,90 @@ const AppNavigator = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Notification Handling
+  const navigationRef = React.useRef<any>(null);
+  const [pendingNotification, setPendingNotification] = useState<any>(null);
+
+  // 1. Check Initial Notification (Quit State) ON MOUNT
+  useEffect(() => {
+    NotificationService.checkInitialNotification(remoteMessage => {
+      console.log(
+        '[AppNavigator] Queuing initial notification:',
+        remoteMessage,
+      );
+      setPendingNotification(remoteMessage);
+    });
+  }, []);
+
+  // 2. Handle Notification Navigation (Foreground/Background/Pending)
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+
+    const handleNotification = (remoteMessage: any) => {
+      console.log('[AppNavigator] Handling notification:', remoteMessage);
+      const { requestId, type } = remoteMessage.data || {};
+
+      if ((type === 'NEW_REQUEST' || requestId) && navigationRef.current) {
+        // Navigate to Jobs List with highlight logic
+        const targetScreen =
+          type === 'QUOTE_ACCEPTED' ? 'JobDetails' : 'JobsList';
+        const params =
+          type === 'QUOTE_ACCEPTED'
+            ? { requestId: requestId }
+            : { highlightJobId: requestId };
+
+        console.log(
+          `[AppNavigator] Navigating to ${targetScreen} with params:`,
+          params,
+        );
+
+        if (type === 'QUOTE_ACCEPTED') {
+          navigationRef.current?.navigate('MainApp', {
+            screen: 'Jobs', // Or Dashboard? JobsStack usually has JobDetails
+            params: {
+              screen: 'JobDetails',
+              params: { jobId: requestId },
+            },
+          });
+        } else {
+          navigationRef.current?.navigate('MainApp', {
+            screen: 'Jobs',
+            params: {
+              screen: 'JobsList',
+              params: { highlightJobId: requestId },
+            },
+          });
+        }
+      }
+    };
+
+    // Process Pending Notification if any
+    if (pendingNotification) {
+      console.log('[AppNavigator] Processing pending notification');
+      handleNotification(pendingNotification);
+      setPendingNotification(null);
+    }
+
+    // 2. Background State
+    const unsubscribeBackground =
+      NotificationService.onNotificationOpenedApp(handleNotification);
+
+    // 3. Foreground State
+    const unsubscribeForeground =
+      NotificationService.setupForegroundHandler(handleNotification);
+
+    return () => {
+      unsubscribeBackground();
+      unsubscribeForeground();
+    };
+  }, [isAuthenticated, isLoading, pendingNotification]); // Re-run when these change
+
   if (isLoading || showSplash) {
     return <SplashScreen />;
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
