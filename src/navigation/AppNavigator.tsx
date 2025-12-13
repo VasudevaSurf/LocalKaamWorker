@@ -68,13 +68,18 @@ const AppNavigator = () => {
           params,
         );
 
-        if (type === 'QUOTE_ACCEPTED') {
+        if (type === 'QUOTE_ACCEPTED' || type === 'JOB_CANCELLED_CUSTOMER') {
+          // Both go to JobDetails
           navigationRef.current?.navigate('MainApp', {
             screen: 'Jobs', // Or Dashboard? JobsStack usually has JobDetails
             params: {
               screen: 'JobDetails',
               params: { jobId: requestId },
             },
+          });
+        } else if (type === 'NEW_RATING') {
+          navigationRef.current?.navigate('MainApp', {
+            screen: 'Profile', // Or Dashboard? JobsStack usually has JobDetails
           });
         } else {
           navigationRef.current?.navigate('MainApp', {
