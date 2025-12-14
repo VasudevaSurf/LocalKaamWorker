@@ -9,10 +9,15 @@ import {
   Modal,
   Alert,
   RefreshControl,
+  Linking,
+  Platform,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import Geolocation from '@react-native-community/geolocation';
 import Header from '../../../components/Header/Header';
 import { styles } from './JobsListScreen.styles';
 import { COLORS } from '../../../utils';
@@ -30,9 +35,16 @@ interface ServiceRequest {
   location: {
     address: string;
     city?: string;
+    area?: string;
+    pincode?: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
   };
   budget: number;
   urgency: string;
+  scheduledDate?: string;
   status: string;
   quotesCount: number;
   createdAt: string;
@@ -58,6 +70,12 @@ const JobsListScreen = () => {
   const route = useRoute();
   const [highlightedJobId, setHighlightedJobId] = useState<string | null>(null);
 
+  // Worker Location State
+  const [workerLocation, setWorkerLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
   // Quote modal state
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(
@@ -69,7 +87,7 @@ const JobsListScreen = () => {
 
   useEffect(() => {
     checkInitialTab();
-    checkInitialTab();
+    getCurrentLocation();
   }, []);
 
   // Handle Highlight Params
@@ -78,18 +96,12 @@ const JobsListScreen = () => {
     const { highlightJobId } = route.params || {};
     if (highlightJobId) {
       console.log('[Jobs] Highlighting job:', highlightJobId);
-      // Ensure we are on the tab containing the job (usually 'new' for notifications)
       setSelectedTab('new');
       setHighlightedJobId(highlightJobId);
-
-      // Clear highlight after 3 seconds
       const timer = setTimeout(() => {
         setHighlightedJobId(null);
-        // Clear param so it doesn't re-trigger on simple re-renders?
-        // Note: Param persistence is handled by navigation, we depend on manual clear in state
         navigation.setParams({ highlightJobId: null } as never);
       }, 3000);
-
       return () => clearTimeout(timer);
     }
   }, [route.params]);
@@ -101,6 +113,45 @@ const JobsListScreen = () => {
       fetchActiveRequests();
     }
   }, [selectedTab]);
+
+  const getCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      position => {
+        setWorkerLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      error => console.log('Error getting location', error),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+    );
+  };
+
+  const calculateDistance = (
+    lat1?: number,
+    lon1?: number,
+    lat2?: number,
+    lon2?: number,
+  ) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) *
+        Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d.toFixed(1);
+  };
+
+  const deg2rad = (deg: number) => {
+    return deg * (Math.PI / 180);
+  };
 
   const checkInitialTab = async () => {
     if (!user?.id) return;
@@ -119,7 +170,6 @@ const JobsListScreen = () => {
   };
 
   useEffect(() => {
-    // Listen for new requests
     SocketService.onNewRequest(data => {
       console.log('[Jobs] New request received:', data);
       if (selectedTab === 'new') {
@@ -127,7 +177,6 @@ const JobsListScreen = () => {
       }
     });
 
-    // Listen for accepted requests
     SocketService.onRequestAccepted(data => {
       console.log('[Jobs] Request accepted:', data);
       if (data.workerId === user?.id) {
@@ -135,7 +184,6 @@ const JobsListScreen = () => {
         setSelectedTab('active');
         fetchActiveRequests();
       } else {
-        // Refresh list if another worker was accepted
         if (selectedTab === 'new') {
           fetchPendingRequests();
         }
@@ -151,13 +199,7 @@ const JobsListScreen = () => {
   const fetchPendingRequests = async () => {
     try {
       setLoading(true);
-      // Pass workerId to check for existing quotes
-      console.log('[Jobs] Fetching requests for worker:', user?.id);
       const requests = await api.getPendingRequests(undefined, user?.id);
-      console.log(
-        '[Jobs] Received requests:',
-        JSON.stringify(requests, null, 2),
-      );
       setPendingRequests(requests || []);
     } catch (error) {
       console.error('[Jobs] Error fetching pending requests:', error);
@@ -182,6 +224,7 @@ const JobsListScreen = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    getCurrentLocation(); // Refresh location too
     if (selectedTab === 'new') {
       await fetchPendingRequests();
     } else if (selectedTab === 'active') {
@@ -190,11 +233,8 @@ const JobsListScreen = () => {
     setRefreshing(false);
   };
 
-  // ... (socket listeners remain same) ...
-
   const handleQuotePress = (request: ServiceRequest) => {
     setSelectedRequest(request);
-    // Pre-fill if editing
     if (request.myQuote) {
       setQuotedPrice(request.myQuote.quotedPrice.toString());
       setQuoteMessage(request.myQuote.message || '');
@@ -207,15 +247,12 @@ const JobsListScreen = () => {
 
   const handleSubmitQuote = async () => {
     if (!selectedRequest || !user) return;
-
     if (!quotedPrice) {
       Alert.alert('Error', 'Please enter quoted price');
       return;
     }
-
     try {
       setSubmitting(true);
-
       const quoteData = {
         serviceRequestId: selectedRequest._id,
         workerId: user.id,
@@ -224,12 +261,10 @@ const JobsListScreen = () => {
         quotedPrice: parseFloat(quotedPrice),
         message: quoteMessage,
       };
-
       await api.submitQuote(quoteData);
-
       Alert.alert('Success', 'Quote submitted successfully!');
       setShowQuoteModal(false);
-      fetchPendingRequests(); // Refresh list
+      fetchPendingRequests();
     } catch (error: any) {
       console.error('[Jobs] Error submitting quote:', error);
       Alert.alert(
@@ -246,7 +281,6 @@ const JobsListScreen = () => {
     const created = new Date(dateString);
     const diffMs = now.getTime() - created.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-
     if (diffMins < 60) return `${diffMins}m ago`;
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours}h ago`;
@@ -264,18 +298,47 @@ const JobsListScreen = () => {
     return labels[urgency] || urgency;
   };
 
+  const openMaps = (lat: number, lng: number, label: string) => {
+    const scheme = Platform.select({
+      ios: 'maps:0,0?q=',
+      android: 'geo:0,0?q=',
+    });
+    const latLng = `${lat},${lng}`;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`,
+    });
+    if (url) Linking.openURL(url);
+  };
+
   const renderNewEnquiryCard = (request: ServiceRequest) => {
     const isHighlighted = request._id === highlightedJobId;
+    const distance = calculateDistance(
+      workerLocation?.latitude,
+      workerLocation?.longitude,
+      request.location.coordinates?.lat,
+      request.location.coordinates?.lng,
+    );
+    const hasCoords =
+      request.location.coordinates?.lat && request.location.coordinates?.lng;
+
     return (
-      <View
+      <TouchableOpacity
         key={request._id}
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate(
+            'EnquiryDetails' as never,
+            { jobId: request._id } as never,
+          )
+        }
         style={[
           styles.jobCard,
           styles.newJobCard,
           isHighlighted && {
             borderColor: COLORS.primary,
             borderWidth: 2,
-            backgroundColor: COLORS.primary + '10', // Slight tint
+            backgroundColor: COLORS.primary + '10',
           },
         ]}
       >
@@ -283,28 +346,94 @@ const JobsListScreen = () => {
           <Text style={styles.newBadgeText}>NEW</Text>
         </View>
 
+        {/* Header: Customer & Basic Loc */}
         <View style={styles.customerSection}>
           <View style={styles.customerIconPlaceholder}>
             <Icon name="account" size={24} color={COLORS.primary} />
           </View>
           <View style={styles.customerInfo}>
             <Text style={styles.customerName}>{request.customerName}</Text>
-            <Text style={styles.customerPhone}>{request.customerPhone}</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginTop: 2,
+              }}
+            >
+              <Icon name="map-marker" size={14} color={COLORS.textSecondary} />
+              <Text
+                style={[styles.locationText, { color: COLORS.textSecondary }]}
+              >
+                {request.location.area || request.location.city || 'Location'}
+              </Text>
+            </View>
           </View>
-          <View style={styles.locationBadge}>
-            <Icon name="map-marker" size={14} color={COLORS.primary} />
-            <Text style={styles.locationText}>
-              {request.location.city || 'Nearby'}
-            </Text>
-          </View>
+          {distance && (
+            <View style={styles.distanceBadge}>
+              <Icon name="map-marker-distance" size={14} color={COLORS.white} />
+              <Text style={styles.distanceText}>{distance} km</Text>
+            </View>
+          )}
         </View>
 
+        {/* Job Details */}
         <View style={styles.jobDetails}>
           <Text style={styles.jobTitle}>{request.serviceType}</Text>
           <Text style={styles.jobDescription} numberOfLines={2}>
             {request.description}
           </Text>
         </View>
+
+        {/* Address Preview */}
+        <View style={styles.addressContainer}>
+          <Text style={styles.addressLabel}>Location:</Text>
+          <Text style={styles.addressText} numberOfLines={1}>
+            {request.location.address}
+          </Text>
+        </View>
+
+        {/* Map Preview */}
+        {hasCoords && (
+          <View
+            style={{
+              height: 100,
+              borderRadius: 12,
+              overflow: 'hidden',
+              marginTop: 12,
+              marginBottom: 12,
+            }}
+          >
+            <MapView
+              provider={PROVIDER_GOOGLE}
+              style={{ flex: 1 }}
+              initialRegion={{
+                latitude: request.location.coordinates!.lat,
+                longitude: request.location.coordinates!.lng,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              pitchEnabled={false}
+              rotateEnabled={false}
+            />
+            {/* Overlay to prevent map interaction but allow card press */}
+            <View
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: 'transparent',
+              }}
+            />
+          </View>
+        )}
+
+        {request.scheduledDate && (
+          <View style={styles.scheduledBadge}>
+            <Text style={styles.scheduledText}>
+              📅 Scheduled: {new Date(request.scheduledDate).toLocaleString()}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.jobMeta}>
           <View style={styles.metaItem}>
@@ -327,161 +456,123 @@ const JobsListScreen = () => {
           </View>
         </View>
 
-        <View style={styles.jobActions}>
-          {request.myQuote ? (
-            <View style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
-              {request.myQuote.quotedPrice === request.budget &&
-              request.myQuote.status === 'accepted' ? (
-                <View
-                  style={[
-                    styles.callButton,
-                    {
-                      backgroundColor: COLORS.success,
-                      borderColor: COLORS.success,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.callButtonText, { color: COLORS.white }]}
-                  >
-                    Accepted ₹{request.myQuote.quotedPrice}
-                  </Text>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.callButton,
-                    {
-                      backgroundColor: COLORS.success + '10',
-                      borderColor: COLORS.success,
-                    },
-                  ]}
-                  onPress={() => {
-                    // Quick accept at budget price
-                    Alert.alert(
-                      'Accept Request',
-                      `Do you want to accept this job for ₹${request.budget}?`,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Accept',
-                          onPress: async () => {
-                            if (!user) return;
-                            try {
-                              setSubmitting(true);
-                              await api.submitQuote({
-                                serviceRequestId: request._id,
-                                workerId: user.id,
-                                workerName: user.name,
-                                workerPhone: user.phoneNumber,
-                                quotedPrice: request.budget,
-                                message: 'I accept your budget.',
-                              });
-                              Alert.alert('Success', 'Quote submitted!');
-                              fetchPendingRequests();
-                            } catch (err) {
-                              Alert.alert('Error', 'Failed to submit quote');
-                            } finally {
-                              setSubmitting(false);
-                            }
-                          },
-                        },
-                      ],
-                    );
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[styles.callButtonText, { color: COLORS.success }]}
-                  >
-                    Accept ₹{request.budget}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                style={[
-                  styles.respondButton,
-                  { backgroundColor: COLORS.warning },
-                ]}
-                onPress={() => handleQuotePress(request)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.respondButtonText}>
-                  Change Offer
-                  {request.myQuote.quotedPrice !== request.budget
-                    ? ` (₹${request.myQuote.quotedPrice})`
-                    : ''}
-                </Text>
-                <Icon name="pencil" size={18} color={COLORS.white} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                style={[
-                  styles.callButton,
-                  {
-                    backgroundColor: COLORS.success + '10',
-                    borderColor: COLORS.success,
-                  },
-                ]}
-                onPress={() => {
-                  // Quick accept at budget price
-                  Alert.alert(
-                    'Accept Request',
-                    `Do you want to accept this job for ₹${request.budget}?`,
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Accept',
-                        onPress: async () => {
-                          if (!user) return;
-                          try {
-                            setSubmitting(true);
-                            await api.submitQuote({
-                              serviceRequestId: request._id,
-                              workerId: user.id,
-                              workerName: user.name,
-                              workerPhone: user.phoneNumber,
-                              quotedPrice: request.budget,
-                              message: 'I accept your budget.',
-                            });
-                            Alert.alert('Success', 'Quote submitted!');
-                            fetchPendingRequests();
-                          } catch (err) {
-                            Alert.alert('Error', 'Failed to submit quote');
-                          } finally {
-                            setSubmitting(false);
-                          }
-                        },
-                      },
-                    ],
-                  );
-                }}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[styles.callButtonText, { color: COLORS.success }]}
-                >
-                  Accept ₹{request.budget}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.respondButton}
-                onPress={() => handleQuotePress(request)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.respondButtonText}>Offer</Text>
-                <Icon name="arrow-right" size={18} color={COLORS.white} />
-              </TouchableOpacity>
-            </View>
-          )}
+        {/* Tap to View CTA */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            marginTop: 12,
+            borderTopWidth: 1,
+            borderTopColor: COLORS.border,
+            paddingTop: 10,
+          }}
+        >
+          <Text style={{ color: COLORS.primary, fontWeight: 'bold' }}>
+            Tap to View Details & Offer
+          </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
+
+  const renderActiveJobCard = (request: ServiceRequest) => (
+    <View
+      key={request._id}
+      style={[
+        styles.jobCard,
+        { borderLeftColor: COLORS.success, borderLeftWidth: 4 },
+      ]}
+    >
+      <View style={[styles.newBadge, { backgroundColor: COLORS.success }]}>
+        <Text style={styles.newBadgeText}>ACTIVE</Text>
+      </View>
+
+      <View style={styles.customerSection}>
+        <View style={styles.customerIconPlaceholder}>
+          {/* @ts-ignore */}
+          <Icon name="account" size={24} color={COLORS.primary} />
+        </View>
+        <View style={styles.customerInfo}>
+          <Text style={styles.customerName}>{request.customerName}</Text>
+          <Text style={styles.customerPhone}>{request.customerPhone}</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.callButton, { paddingHorizontal: 12, height: 36 }]}
+          onPress={() => Linking.openURL(`tel:${request.customerPhone}`)}
+        >
+          <Icon name="phone" size={18} color={COLORS.success} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.jobDetails}>
+        <Text style={styles.jobTitle}>{request.serviceType}</Text>
+        <Text style={styles.jobDescription} numberOfLines={2}>
+          {request.description}
+        </Text>
+      </View>
+
+      {/* Active Job Address - Always Full */}
+      <View
+        style={[
+          styles.addressContainer,
+          { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+        ]}
+      >
+        <Text style={[styles.addressLabel, { color: '#166534' }]}>
+          Location to Visit:
+        </Text>
+        <Text style={[styles.addressText, { color: '#15803D' }]}>
+          {request.location.address}
+        </Text>
+        {request.location.coordinates && (
+          <TouchableOpacity
+            style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}
+            onPress={() =>
+              openMaps(
+                request.location.coordinates!.lat,
+                request.location.coordinates!.lng,
+                request.customerName,
+              )
+            }
+          >
+            <Icon name="map-marker-radius" size={16} color="#15803D" />
+            <Text
+              style={{ color: '#15803D', fontWeight: 'bold', marginLeft: 4 }}
+            >
+              Navigate
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.jobMeta}>
+        <View style={styles.metaItem}>
+          <Icon name="cash" size={18} color={COLORS.success} />
+          <Text style={styles.metaText}>
+            ₹{request.budget.toLocaleString()} (Agreed)
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.jobActions}>
+        <TouchableOpacity
+          style={[
+            styles.respondButton,
+            { backgroundColor: COLORS.primary, flex: 1 },
+          ]}
+          onPress={() =>
+            navigation.navigate(
+              'EnquiryDetails' as never,
+              { jobId: request._id } as never,
+            )
+          }
+        >
+          <Text style={styles.respondButtonText}>View Details / Start Job</Text>
+          <Icon name="arrow-right" size={18} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   const renderQuoteModal = () => (
     <Modal
@@ -557,85 +648,12 @@ const JobsListScreen = () => {
     </Modal>
   );
 
-  const renderActiveJobCard = (request: ServiceRequest) => (
-    <View
-      key={request._id}
-      style={[
-        styles.jobCard,
-        { borderLeftColor: COLORS.success, borderLeftWidth: 4 },
-      ]}
-    >
-      <View style={[styles.newBadge, { backgroundColor: COLORS.success }]}>
-        <Text style={styles.newBadgeText}>ACTIVE</Text>
-      </View>
-
-      <View style={styles.customerSection}>
-        <View style={styles.customerIconPlaceholder}>
-          {/* @ts-ignore */}
-          <Icon name="account" size={24} color={COLORS.primary} />
-        </View>
-        <View style={styles.customerInfo}>
-          <Text style={styles.customerName}>{request.customerName}</Text>
-          <Text style={styles.customerPhone}>{request.customerPhone}</Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.callButton, { paddingHorizontal: 12, height: 36 }]}
-          onPress={() =>
-            Alert.alert('Call', `Calling ${request.customerName}...`)
-          }
-        >
-          <Icon name="phone" size={18} color={COLORS.success} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.jobDetails}>
-        <Text style={styles.jobTitle}>{request.serviceType}</Text>
-        <Text style={styles.jobDescription} numberOfLines={2}>
-          {request.description}
-        </Text>
-      </View>
-
-      <View style={styles.jobMeta}>
-        <View style={styles.metaItem}>
-          <Icon name="cash" size={18} color={COLORS.success} />
-          <Text style={styles.metaText}>
-            ₹{request.budget.toLocaleString()} (Agreed)
-          </Text>
-        </View>
-        <View style={styles.metaItem}>
-          <Icon name="map-marker" size={18} color={COLORS.error} />
-          <Text style={styles.metaText}>{request.location.address}</Text>
-        </View>
-      </View>
-
-      <View style={styles.jobActions}>
-        <TouchableOpacity
-          style={[
-            styles.respondButton,
-            { backgroundColor: COLORS.primary, flex: 1 },
-          ]}
-          onPress={() =>
-            navigation.navigate(
-              'JobDetails' as never,
-              { jobId: request._id } as never,
-            )
-          }
-        >
-          <Text style={styles.respondButtonText}>View Details</Text>
-          <Icon name="arrow-right" size={18} color={COLORS.white} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Header variant="simple" title="Jobs" />
 
-        {/* Tabs */}
         <View style={styles.tabsContainer}>
-          {/* ... (Tabs remain same) ... */}
           <TouchableOpacity
             style={[styles.tab, selectedTab === 'new' && styles.activeTab]}
             onPress={() => setSelectedTab('new')}

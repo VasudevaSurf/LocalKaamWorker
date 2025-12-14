@@ -37,6 +37,9 @@ const AppNavigator = () => {
 
   // 1. Check Initial Notification (Quit State) ON MOUNT
   useEffect(() => {
+    // Force explicit channel creation to ensure v6 is registered
+    NotificationService.createDefaultChannel();
+
     NotificationService.checkInitialNotification(remoteMessage => {
       console.log(
         '[AppNavigator] Queuing initial notification:',
@@ -69,11 +72,11 @@ const AppNavigator = () => {
         );
 
         if (type === 'QUOTE_ACCEPTED' || type === 'JOB_CANCELLED_CUSTOMER') {
-          // Both go to JobDetails
+          // Both go to EnquiryDetails (Unified Screen)
           navigationRef.current?.navigate('MainApp', {
-            screen: 'Jobs', // Or Dashboard? JobsStack usually has JobDetails
+            screen: 'Jobs', // Navigate to Jobs Tab first
             params: {
-              screen: 'JobDetails',
+              screen: 'EnquiryDetails', // Then to EnquiryDetails in JobsStack
               params: { jobId: requestId },
             },
           });

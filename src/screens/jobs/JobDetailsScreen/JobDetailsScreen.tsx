@@ -5,15 +5,14 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Image,
   Linking,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { styles } from './JobDetailsScreen.styles';
-import { COLORS } from '../../../utils';
+import { COLORS, FONTS } from '../../../utils';
 import Header from '../../../components/Header/Header';
 import * as api from '../../../services/api';
 
@@ -46,10 +45,6 @@ const JobDetailsScreen = () => {
     }
   };
 
-  const handleBack = () => {
-    navigation.goBack();
-  };
-
   const handleCall = () => {
     if (job?.customerPhone) {
       Linking.openURL(`tel:${job.customerPhone}`);
@@ -64,16 +59,6 @@ const JobDetailsScreen = () => {
         `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`,
       );
     }
-  };
-
-  const handleSendResponse = () => {
-    // Navigate back to jobs list and open quote modal
-    // Or implement direct quote submission here
-    navigation.goBack();
-  };
-
-  const handleNotInterested = () => {
-    navigation.goBack();
   };
 
   const handleViewLocation = () => {
@@ -107,7 +92,7 @@ const JobDetailsScreen = () => {
                 'Job Cancelled',
                 'You have successfully cancelled this job.',
               );
-              navigation.goBack();
+              navigation.navigate('JobsList' as never);
             } catch (error) {
               Alert.alert('Error', 'Failed to cancel job. Please try again.');
               setLoading(false);
@@ -120,11 +105,9 @@ const JobDetailsScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={[styles.container, { justifyContent: 'center' }]}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </SafeAreaView>
+      <View style={[styles.container, { justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
     );
   }
 
@@ -140,19 +123,6 @@ const JobDetailsScreen = () => {
           title="Job Details"
           showMore
           onMorePress={handleSaveJob}
-          rightComponent={
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSaveJob}
-              activeOpacity={0.7}
-            >
-              <Icon
-                name={isSaved ? 'bookmark' : 'bookmark-outline'}
-                size={24}
-                color={isSaved ? COLORS.primary : COLORS.textPrimary}
-              />
-            </TouchableOpacity>
-          }
         />
 
         <ScrollView
@@ -178,7 +148,7 @@ const JobDetailsScreen = () => {
                 <Text style={styles.customerName}>{job.customerName}</Text>
                 <View style={styles.customerRatingContainer}>
                   <Icon name="star" size={16} color="#F59E0B" />
-                  <Text style={styles.customerRating}>New Customer</Text>
+                  <Text style={styles.customerRating}>Verified Customer</Text>
                 </View>
               </View>
               <View style={styles.verifiedBadge}>
@@ -186,26 +156,28 @@ const JobDetailsScreen = () => {
               </View>
             </View>
 
-            {/* Contact Buttons */}
-            <View style={styles.contactButtons}>
-              <TouchableOpacity
-                style={styles.contactButton}
-                onPress={handleCall}
-                activeOpacity={0.7}
-              >
-                <Icon name="phone" size={20} color={COLORS.white} />
-                <Text style={styles.contactButtonText}>Call</Text>
-              </TouchableOpacity>
+            {/* Contact Buttons - Only for Accepted Jobs */}
+            {job.status === 'accepted' || job.status === 'quoted' ? (
+              <View style={styles.contactButtons}>
+                <TouchableOpacity
+                  style={styles.contactButton}
+                  onPress={handleCall}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="phone" size={20} color={COLORS.white} />
+                  <Text style={styles.contactButtonText}>Call</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.contactButton, { backgroundColor: '#25D366' }]}
-                onPress={handleWhatsApp}
-                activeOpacity={0.7}
-              >
-                <Icon name="whatsapp" size={20} color={COLORS.white} />
-                <Text style={styles.contactButtonText}>WhatsApp</Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={[styles.contactButton, { backgroundColor: '#25D366' }]}
+                  onPress={handleWhatsApp}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="whatsapp" size={20} color={COLORS.white} />
+                  <Text style={styles.contactButtonText}>WhatsApp</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
 
           {/* Job Title & Description */}
@@ -230,7 +202,7 @@ const JobDetailsScreen = () => {
                   size={16}
                   color={COLORS.textSecondary}
                 />
-                <Text style={styles.metaText}>Active</Text>
+                <Text style={styles.metaText}>{job.status.toUpperCase()}</Text>
               </View>
             </View>
 
@@ -296,20 +268,10 @@ const JobDetailsScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Warning Box */}
-          <View style={styles.warningBox}>
-            <Icon name="alert-circle" size={20} color={COLORS.warning} />
-            <Text style={styles.warningText}>
-              Only respond if you can commit to the job. Cancellations affect
-              your rating.
-            </Text>
-          </View>
-
           {/* Bottom Spacing */}
           <View style={{ height: 100 }} />
         </ScrollView>
 
-        {/* Bottom Actions */}
         {/* Bottom Actions */}
         <View style={styles.bottomActions}>
           {job.status === 'accepted' ? (
@@ -336,7 +298,10 @@ const JobDetailsScreen = () => {
                   { backgroundColor: COLORS.success },
                 ]}
                 onPress={() =>
-                  navigation.navigate('JobCompletion', { requestId: job._id })
+                  navigation.navigate(
+                    'JobCompletion' as never,
+                    { requestId: job._id } as never,
+                  )
                 }
                 activeOpacity={0.8}
               >
@@ -363,30 +328,253 @@ const JobDetailsScreen = () => {
               </Text>
             </View>
           ) : (
-            <>
-              <TouchableOpacity
-                style={styles.notInterestedButton}
-                onPress={handleNotInterested}
-                activeOpacity={0.7}
-              >
-                <Icon name="close" size={20} color={COLORS.error} />
-                <Text style={styles.notInterestedText}>Back</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.sendResponseButton}
-                onPress={handleSendResponse}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.sendResponseText}>Respond</Text>
-                <Icon name="send" size={20} color={COLORS.white} />
-              </TouchableOpacity>
-            </>
+            // Fallback for pending view if somehow reached (should depend on EnqDetails now)
+            <View style={{ alignItems: 'center' }}>
+              <Text>Status: {job.status}</Text>
+            </View>
           )}
         </View>
       </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  customerCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  customerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  customerImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  customerInfo: {
+    flex: 1,
+  },
+  customerName: {
+    fontSize: 18,
+    fontFamily: FONTS.semiBold,
+    color: COLORS.textPrimary,
+  },
+  customerRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  customerRating: {
+    fontSize: 14,
+    fontFamily: FONTS.medium,
+    color: COLORS.textSecondary,
+    marginLeft: 4,
+  },
+  verifiedBadge: {
+    marginLeft: 8,
+  },
+  contactButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  contactButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  contactButtonText: {
+    color: COLORS.white,
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+  },
+  jobCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  jobTitle: {
+    fontSize: 20,
+    fontFamily: FONTS.bold,
+    color: COLORS.textPrimary,
+    marginBottom: 10,
+  },
+  jobMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.medium,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginBottom: 10,
+  },
+  jobDescription: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    lineHeight: 22,
+    fontFamily: FONTS.regular,
+  },
+  detailsCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: FONTS.semiBold,
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  detailItem: {
+    alignItems: 'center',
+    width: '30%',
+  },
+  detailIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.backgroundGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontFamily: FONTS.medium,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.semiBold,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  detailSubValue: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  locationCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  locationContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    gap: 8,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+  },
+  viewMapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 8,
+    gap: 6,
+  },
+  viewMapText: {
+    color: COLORS.primary,
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+  },
+  bottomActions: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.white,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    flexDirection: 'row',
+    gap: 12,
+    elevation: 10,
+  },
+  notInterestedButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.error,
+    gap: 8,
+  },
+  notInterestedText: {
+    color: COLORS.error,
+    fontFamily: FONTS.semiBold,
+    fontSize: 16,
+  },
+  sendResponseButton: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+    backgroundColor: COLORS.success,
+    gap: 8,
+  },
+  sendResponseText: {
+    color: COLORS.white,
+    fontFamily: FONTS.semiBold,
+    fontSize: 16,
+  },
+});
 
 export default JobDetailsScreen;

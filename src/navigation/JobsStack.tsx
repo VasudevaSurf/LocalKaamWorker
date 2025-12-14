@@ -9,6 +9,7 @@ import JobDetailsScreen from '../screens/jobs/JobDetailsScreen';
 import SendResponseScreen from '../screens/jobs/SendResponseScreen';
 import JobCompletionScreen from '../screens/jobs/JobCompletionScreen/JobCompletionScreen';
 import PaymentConfirmationScreen from '../screens/jobs/PaymentConfirmationScreen';
+import EnquiryDetailsScreen from '../screens/jobs/EnquiryDetailsScreen';
 
 const Stack = createNativeStackNavigator<JobsStackParamList>();
 
@@ -28,6 +29,7 @@ const JobsStack = () => {
         name="PaymentConfirmation"
         component={PaymentConfirmationScreen}
       />
+      <Stack.Screen name="EnquiryDetails" component={EnquiryDetailsScreen} />
     </Stack.Navigator>
   );
 };

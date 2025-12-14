@@ -83,7 +83,7 @@ const MainTabs = () => {
                 navigation.navigate('MainApp', {
                   screen: 'Jobs',
                   params: {
-                    screen: 'JobDetails',
+                    screen: 'EnquiryDetails',
                     params: { jobId: active[0]._id },
                   },
                 } as never);

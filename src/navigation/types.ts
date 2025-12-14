@@ -38,6 +38,7 @@ export type JobsStackParamList = {
   SendResponse: { jobId: string };
   JobCompletion: { requestId: string };
   PaymentConfirmation: { jobId: string; amount: number };
+  EnquiryDetails: { jobId: string };
 };
 
 // Earnings Stack

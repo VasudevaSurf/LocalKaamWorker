@@ -361,4 +361,78 @@ export const styles = StyleSheet.create({
     fontSize: getFigmaDimension(16),
     color: COLORS.white,
   },
+  // Map and Address Styles
+  addressContainer: {
+    marginVertical: getFigmaDimension(8),
+    padding: getFigmaDimension(12),
+    backgroundColor: '#F9FAFB',
+    borderRadius: getFigmaDimension(8),
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  addressLabel: {
+    fontFamily: FONTS.semiBold,
+    fontSize: getFigmaDimension(12),
+    color: COLORS.textSecondary,
+    marginBottom: getFigmaDimension(4),
+  },
+  addressText: {
+    fontFamily: FONTS.medium,
+    fontSize: getFigmaDimension(14),
+    color: COLORS.textPrimary,
+    lineHeight: getFigmaDimension(20),
+  },
+  mapPreviewContainer: {
+    marginTop: getFigmaDimension(8),
+    borderRadius: getFigmaDimension(8),
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  mapPreview: {
+    width: '100%',
+    height: getFigmaDimension(120),
+  },
+  viewMapButton: {
+    backgroundColor: COLORS.white,
+    paddingVertical: getFigmaDimension(8),
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  viewMapText: {
+    fontFamily: FONTS.medium,
+    fontSize: getFigmaDimension(12),
+    color: COLORS.primary,
+  },
+  distanceBadge: {
+    backgroundColor: COLORS.primary,
+    borderRadius: getFigmaDimension(4),
+    paddingHorizontal: getFigmaDimension(6),
+    paddingVertical: getFigmaDimension(2),
+    marginLeft: 'auto', // Push to right
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  distanceText: {
+    color: COLORS.white,
+    fontSize: getFigmaDimension(11),
+    fontFamily: FONTS.bold,
+  },
+  scheduledBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    padding: getFigmaDimension(8),
+    borderRadius: getFigmaDimension(6),
+    marginBottom: getFigmaDimension(12),
+    borderWidth: 1,
+    borderColor: '#FFEDD5',
+  },
+  scheduledText: {
+    fontFamily: FONTS.medium,
+    fontSize: getFigmaDimension(13),
+    color: '#9A3412',
+  },
 });
